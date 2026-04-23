@@ -58,6 +58,17 @@ def clean_text():
         if is_new_block:
             save_paragraph()
             current_paragraph.append(line)
+            # If the current block is a modda header, it should be on its own line.
+            # We can just save it immediately so it doesn't get merged with the next line.
+            if re.match(r'^\d+\s*-\s*modda', line, re.IGNORECASE):
+                save_paragraph()
+            elif re.match(r'^[IVXLC]+\s+bob', line, re.IGNORECASE):
+                save_paragraph()
+            elif is_all_caps:
+                save_paragraph()
+            elif line.startswith('—') or line.startswith('- '):
+                # Don't save immediately, let it form a paragraph
+                pass
         else:
             if current_paragraph:
                 last_word = current_paragraph[-1]
