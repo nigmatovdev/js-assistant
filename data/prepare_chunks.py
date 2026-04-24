@@ -6,44 +6,48 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 INPUT_PATH = os.path.join(SCRIPT_DIR, "structured.json")
 OUTPUT_PATH = os.path.join(SCRIPT_DIR, "chunks.json")
 
-def chunk_text(text, max_len=500):
-    # Split by sentences (looking for ., !, ?, or \n followed by space)
-    sentences = re.split(r'(?<=[.!?\n])\s+', text.strip())
+def chunk_text(text, max_len=800, min_len=120):
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     chunks = []
-    current_chunk = ""
+    current = ""
 
     for sentence in sentences:
         sentence = sentence.strip()
-        if not sentence: 
+        if not sentence:
             continue
-        
-        # If the sentence itself is longer than max_len, we split by words
+
         if len(sentence) > max_len:
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-                current_chunk = ""
-            
-            words = sentence.split(' ')
+            if current:
+                chunks.append(current.strip())
+                current = ""
+            words = sentence.split()
             for word in words:
-                if len(current_chunk) + len(word) + 1 <= max_len:
-                    current_chunk += word + " "
+                if len(current) + len(word) + 1 <= max_len:
+                    current += word + " "
                 else:
-                    if current_chunk:
-                        chunks.append(current_chunk.strip())
-                    current_chunk = word + " "
+                    if current:
+                        chunks.append(current.strip())
+                    current = word + " "
         else:
-            # Check if adding the sentence would exceed max_len
-            if len(current_chunk) + len(sentence) + 1 <= max_len:
-                current_chunk += sentence + " "
+            if len(current) + len(sentence) + 1 <= max_len:
+                current += sentence + " "
             else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence + " "
-    
-    if current_chunk:
-        chunks.append(current_chunk.strip())
-        
-    return chunks
+                if current:
+                    chunks.append(current.strip())
+                current = sentence + " "
+
+    if current:
+        chunks.append(current.strip())
+
+    # Merge short trailing fragments into the previous chunk
+    result = []
+    for chunk in chunks:
+        if result and len(chunk) < min_len:
+            result[-1] = result[-1] + " " + chunk
+        else:
+            result.append(chunk)
+
+    return result
 
 def process():
     with open(INPUT_PATH, 'r', encoding='utf-8') as f:
@@ -52,26 +56,28 @@ def process():
     all_chunks = []
 
     for item in data:
-        # We'll chunk the search_text to ensure modda number and title context is in the text if possible
-        # Or we can just chunk the content, but search_text is already prepared for indexing.
-        text_to_chunk = item.get("search_text", "")
-        if not text_to_chunk:
-            text_to_chunk = item.get("content", "")
+        # Chunk the content only; prefix every chunk with article ID + title
+        # so every chunk is self-contained and embeds with full context.
+        modda_prefix = f"{item['modda_display']}-modda. {item['title']}."
+        content = item.get("content", "").strip()
+        text_to_chunk = content if content else item.get("title", "")
 
-        chunks = chunk_text(text_to_chunk, max_len=500)
-        
-        for idx, chunk in enumerate(chunks):
+        raw_chunks = chunk_text(text_to_chunk, max_len=800)
+
+        for idx, chunk in enumerate(raw_chunks):
             chunk_id = idx + 1
             all_chunks.append({
                 "id": f"{item['id']}_chunk_{chunk_id}",
                 "modda": item["modda"],
+                "modda_display": item["modda_display"],
                 "chunk_id": chunk_id,
-                "text": chunk,
+                "text": f"{modda_prefix} {chunk}",
                 "metadata": {
                     "qism": item["hierarchy"]["qism"],
                     "bolim": item["hierarchy"]["bolim"],
                     "bob": item["hierarchy"]["bob"],
-                    "title": item["title"]
+                    "title": item["title"],
+                    "modda_display": item["modda_display"],
                 }
             })
 
