@@ -1,11 +1,24 @@
 # Install PyTorch with CUDA FIRST (before the rest):
 #   pip install torch --index-url https://download.pytorch.org/whl/cu121
-#
 # Then install everything else:
 #   pip install -r requirements.txt
 
+# ── RAG ───────────────────────────────────────────────────────────────────────
 sentence-transformers
 chromadb
-fastapi
+ollama
+
+# ── API ───────────────────────────────────────────────────────────────────────
+fastapi>=0.111.0
 uvicorn[standard]
+pydantic-settings
+
+# ── Database ──────────────────────────────────────────────────────────────────
+sqlalchemy>=2.0
+alembic
+
+# ── HTTP ──────────────────────────────────────────────────────────────────────
+httpx
+
+# ── Utils ─────────────────────────────────────────────────────────────────────
 python-dotenv

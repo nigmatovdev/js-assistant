@@ -62,3 +62,13 @@ vector_store/
 # Logs
 *.log
 logs/
+
+# Frontend
+front/node_modules/
+front/dist/
+front/.env
+front/.env.*
+
+# Database (SQLite + ChromaDB — persisted via Docker volume, not in git)
+db/
+*.db

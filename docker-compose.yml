@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./db:/app/db                         # SQLite + ChromaDB persistence
+      - hf_cache:/root/.cache/huggingface    # embedding model cache
+    environment:
+      - DATABASE_URL=sqlite:////app/db/jk_assistant.db
+      - CHROMA_DIR=/app/db/chroma
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - LLM_MODEL=qwen3:8b
+      - EMBED_MODEL=BAAI/bge-m3
+      - MIN_SCORE=0.40
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach Ollama on the host (Linux)
+    restart: unless-stopped
+
+    # ── GPU support ───────────────────────────────────────────────────────────
+    # Requires: nvidia-container-toolkit + Docker >= 19.03
+    # Uncomment the block below and change the Dockerfile torch install line:
+    #   RUN pip install torch --index-url https://download.pytorch.org/whl/cu121
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  hf_cache:

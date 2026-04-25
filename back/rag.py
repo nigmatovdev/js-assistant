@@ -3,29 +3,38 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROMA_DIR = os.path.join(ROOT_DIR, "db", "chroma")
 
+CHROMA_DIR      = os.getenv("CHROMA_DIR",   os.path.join(ROOT_DIR, "db", "chroma"))
 COLLECTION_NAME = "jk_chunks"
-EMBED_MODEL = "BAAI/bge-m3"
-LLM_MODEL = "qwen3:8b"  # change to qwen2.5:14b if you have the VRAM
-MIN_SCORE = 0.40  # discard chunks below this similarity — avoids hallucination on irrelevant context
+EMBED_MODEL     = os.getenv("EMBED_MODEL",  "BAAI/bge-m3")
+LLM_MODEL       = os.getenv("LLM_MODEL",    "qwen3:8b")
+MIN_SCORE       = float(os.getenv("MIN_SCORE", "0.40"))
 
-_model = None
+_model      = None
 _collection = None
+
+
+def _get_device() -> str:
+    try:
+        import torch
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except ImportError:
+        return "cpu"
 
 
 def _load():
     global _model, _collection
     if _model is None:
-        print("Loading embedding model...", flush=True)
-        _model = SentenceTransformer(EMBED_MODEL, device="cuda")
+        device = _get_device()
+        print(f"Loading embedding model on {device}...", flush=True)
+        _model = SentenceTransformer(EMBED_MODEL, device=device)
     if _collection is None:
         client = chromadb.PersistentClient(path=CHROMA_DIR)
         _collection = client.get_collection(COLLECTION_NAME)
 
 
 # Normalize Uzbek apostrophe variants to U+02BB (ʻ) used in the source text.
-_APOSTROPHE_NORM = str.maketrans("'‘’ʼ", "ʻʻʻʻ")
+_APOSTROPHE_NORM = str.maketrans("'''ʼ", "ʻʻʻʻ")
 
 def _normalize(text: str) -> str:
     return text.translate(_APOSTROPHE_NORM)
@@ -41,16 +50,19 @@ def retrieve(question: str, top_k: int = 5) -> list[dict]:
         if score < MIN_SCORE:
             continue
         chunks.append({
-            "id": results["ids"][0][i],
-            "text": results["documents"][0][i],
+            "id":       results["ids"][0][i],
+            "text":     results["documents"][0][i],
             "metadata": results["metadatas"][0][i],
-            "score": score,
+            "score":    score,
         })
     return chunks
 
 
-def ask_stream(question: str, top_k: int = 5):
-    """Yields text tokens as they stream from Ollama, then yields sources as last item."""
+def ask_stream(question: str, top_k: int = 5, history: list[dict] | None = None):
+    """Yields (kind, value) tuples: ('token', str) then ('sources', list).
+
+    history: prior turns as [{"role": "user"|"assistant", "content": str}, ...]
+    """
     import ollama
 
     chunks = retrieve(question, top_k)
@@ -60,7 +72,8 @@ def ask_stream(question: str, top_k: int = 5):
         "Faqat quyida berilgan maqolalar asosida javob bering.\n"
         "Agar javob berilgan maqolalarda bo'lmasa: "
         "\"Ushbu savol bo'yicha Jinoyat Kodeksida ma'lumot topilmadi\" deb ayting.\n"
-        "Javobda tegishli maqola raqamlarini ko'rsating."
+        "Javobda tegishli maqola raqamlarini ko'rsating.\n"
+        "Suhbat tarixini hisobga olib, izchil javob bering."
     )
 
     if chunks:
@@ -76,14 +89,13 @@ def ask_stream(question: str, top_k: int = 5):
             "Shuni foydalanuvchiga ayting."
         )
 
-    stream = ollama.chat(
-        model=LLM_MODEL,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user_msg},
-        ],
-        stream=True,
-    )
+    messages: list[dict] = [{"role": "system", "content": system}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_msg})
+
+    # OLLAMA_HOST env var is automatically read by the ollama package
+    stream = ollama.chat(model=LLM_MODEL, messages=messages, stream=True)
 
     for chunk in stream:
         token = chunk["message"]["content"]
@@ -93,11 +105,11 @@ def ask_stream(question: str, top_k: int = 5):
     yield ("sources", chunks)
 
 
-def ask(question: str, top_k: int = 5) -> dict:
+def ask(question: str, top_k: int = 5, history: list[dict] | None = None) -> dict:
     """Non-streaming version. Returns {answer, sources}."""
     answer_parts = []
     sources = []
-    for kind, value in ask_stream(question, top_k):
+    for kind, value in ask_stream(question, top_k, history):
         if kind == "token":
             answer_parts.append(value)
         elif kind == "sources":
