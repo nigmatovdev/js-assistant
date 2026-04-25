@@ -7,7 +7,7 @@ CHROMA_DIR = os.path.join(ROOT_DIR, "db", "chroma")
 
 COLLECTION_NAME = "jk_chunks"
 EMBED_MODEL = "BAAI/bge-m3"
-LLM_MODEL = "llama3"  # change to qwen2.5:14b if you have the VRAM
+LLM_MODEL = "qwen3:8b"  # change to qwen2.5:14b if you have the VRAM
 MIN_SCORE = 0.40  # discard chunks below this similarity — avoids hallucination on irrelevant context
 
 _model = None
