@@ -27,14 +27,10 @@ export default function ChatArea() {
     send(sid, question);
   };
 
-  if (!activeId) {
-    return <WelcomeScreen onSuggest={handleSuggest} />;
-  }
-
   const streamingMsg = isStreaming || streamingContent
     ? {
         id:         '__streaming__',
-        session_id: activeId,
+        session_id: activeId ?? '',
         role:       'assistant' as const,
         content:    streamingContent,
         sources:    streamingSources.length ? streamingSources : undefined,
@@ -44,36 +40,44 @@ export default function ChatArea() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
-      {/* Messages */}
-      <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 1, sm: 3, md: 6 }, py: 3 }}>
-        <Box sx={{ maxWidth: 760, mx: 'auto' }}>
-          <AnimatePresence initial={false}>
-            {messages.map(msg => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22 }}
-              >
-                <MessageBubble message={msg} />
-              </motion.div>
-            ))}
 
-            {streamingMsg && (
-              <motion.div
-                key="streaming"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22 }}
-              >
-                <MessageBubble message={streamingMsg} isStreaming />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <div ref={bottomRef} />
-        </Box>
+      {/* Scrollable area — either welcome screen or messages */}
+      <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        {!activeId && messages.length === 0 && !streamingMsg ? (
+          <WelcomeScreen onSuggest={handleSuggest} />
+        ) : (
+          <Box sx={{ px: { xs: 2, sm: 4, md: 8 }, py: 3 }}>
+            <Box sx={{ maxWidth: 720, mx: 'auto' }}>
+              <AnimatePresence initial={false}>
+                {messages.map(msg => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <MessageBubble message={msg} />
+                  </motion.div>
+                ))}
+
+                {streamingMsg && (
+                  <motion.div
+                    key="streaming"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <MessageBubble message={streamingMsg} isStreaming />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div ref={bottomRef} />
+            </Box>
+          </Box>
+        )}
       </Box>
 
+      {/* Input always visible at bottom */}
       <InputPanel sessionId={activeId} />
     </Box>
   );

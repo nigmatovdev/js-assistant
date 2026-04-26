@@ -1,33 +1,40 @@
-import { useState }            from 'react';
-import type { KeyboardEvent }  from 'react';
-import Box                     from '@mui/material/Box';
-import Paper                   from '@mui/material/Paper';
-import TextField               from '@mui/material/TextField';
-import IconButton              from '@mui/material/IconButton';
-import Tooltip                 from '@mui/material/Tooltip';
-import Chip                    from '@mui/material/Chip';
-import CircularProgress        from '@mui/material/CircularProgress';
-import SendRoundedIcon         from '@mui/icons-material/SendRounded';
-import StopCircleIcon          from '@mui/icons-material/StopCircle';
-import ManageSearchIcon        from '@mui/icons-material/ManageSearch';
-import { useChatStore }        from '../../store/chatStore';
-import { useSendMessage }      from '../../hooks/useSendMessage';
+import { useState, useRef }       from 'react';
+import type { KeyboardEvent }     from 'react';
+import Box                        from '@mui/material/Box';
+import TextField                  from '@mui/material/TextField';
+import IconButton                 from '@mui/material/IconButton';
+import Tooltip                    from '@mui/material/Tooltip';
+import CircularProgress           from '@mui/material/CircularProgress';
+import Typography                 from '@mui/material/Typography';
+import SendRoundedIcon            from '@mui/icons-material/SendRounded';
+import StopCircleIcon             from '@mui/icons-material/StopCircle';
+import AttachFileIcon             from '@mui/icons-material/AttachFile';
+import { useChatStore }           from '../../store/chatStore';
+import { useSessionStore }        from '../../store/sessionStore';
+import { useSendMessage }         from '../../hooks/useSendMessage';
 
 interface Props {
-  sessionId: string;
+  sessionId: string | null;
 }
 
 export default function InputPanel({ sessionId }: Props) {
   const [input, setInput]     = useState('');
-  const [ragMode, setRagMode] = useState(true);
+  const fileRef               = useRef<HTMLInputElement>(null);
   const { isStreaming }       = useChatStore();
+  const { createSession }     = useSessionStore();
   const { send, stop }        = useSendMessage();
 
-  const submit = () => {
+  const submit = async () => {
     const q = input.trim();
     if (!q || isStreaming) return;
     setInput('');
-    send(sessionId, q, ragMode ? 5 : 2);
+
+    let sid = sessionId;
+    if (!sid) {
+      const session = await createSession();
+      sid = session.id;
+    }
+    send(sid, q);
   };
 
   const handleKey = (e: KeyboardEvent) => {
@@ -37,32 +44,33 @@ export default function InputPanel({ sessionId }: Props) {
   return (
     <Box
       sx={{
-        px: { xs: 1, sm: 3, md: 6 },
-        py: 2,
+        px: { xs: 2, sm: 4, md: 8 },
+        pb: 2.5,
+        pt: 1.5,
         bgcolor: 'background.default',
-        borderTop: 1,
-        borderColor: 'divider',
       }}
     >
-      <Paper
-        elevation={0}
+      <Box
         sx={{
-          maxWidth: 760, mx: 'auto',
-          border: 1,
+          maxWidth: 720,
+          mx: 'auto',
+          border: 1.5,
           borderColor: isStreaming ? 'primary.main' : 'divider',
-          borderRadius: 4,
+          borderRadius: 6,
           overflow: 'hidden',
-          transition: 'border-color 0.2s, box-shadow 0.2s',
-          boxShadow: isStreaming
-            ? '0 0 0 3px rgba(37,99,235,0.15)'
-            : '0 2px 16px rgba(0,0,0,0.06)',
           bgcolor: 'background.paper',
+          transition: 'border-color 0.25s, box-shadow 0.25s',
+          boxShadow: isStreaming
+            ? '0 0 0 4px rgba(37,99,235,0.12), 0 4px 24px rgba(0,0,0,0.08)'
+            : '0 2px 20px rgba(0,0,0,0.07)',
         }}
       >
+        {/* Text field */}
         <TextField
           fullWidth
           multiline
           maxRows={6}
+          minRows={1}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
@@ -71,31 +79,75 @@ export default function InputPanel({ sessionId }: Props) {
           disabled={isStreaming}
           InputProps={{ disableUnderline: true }}
           sx={{
-            px: 2.5, pt: 1.75, pb: 0.5,
-            '& .MuiInputBase-root': { fontSize: '0.95rem', lineHeight: 1.7 },
+            px: 2.5,
+            pt: 1.75,
+            pb: 0.25,
+            '& .MuiInputBase-root': {
+              fontSize: '0.95rem',
+              lineHeight: 1.7,
+              color: 'text.primary',
+            },
+            '& .MuiInputBase-input::placeholder': {
+              color: 'text.disabled',
+              opacity: 1,
+            },
           }}
         />
 
-        {/* Bottom toolbar */}
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 1.5, pb: 1, gap: 1 }}>
-          <Chip
-            icon={<ManageSearchIcon sx={{ fontSize: '16px !important' }} />}
-            label="RAG"
-            size="small"
-            color={ragMode ? 'primary' : 'default'}
-            variant={ragMode ? 'filled' : 'outlined'}
-            onClick={() => setRagMode(m => !m)}
-            sx={{ borderRadius: 2, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}
-          />
+        {/* Toolbar row */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            px: 1.75,
+            pb: 1.25,
+            pt: 0.5,
+            gap: 1,
+          }}
+        >
+          {/* Attach file */}
+          <input ref={fileRef} type="file" hidden />
+          <Tooltip title="Fayl biriktirish (tez orada)">
+            <span>
+              <IconButton
+                size="small"
+                disabled
+                onClick={() => fileRef.current?.click()}
+                sx={{
+                  color: 'text.disabled',
+                  borderRadius: 2,
+                  p: 0.5,
+                }}
+              >
+                <AttachFileIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.68rem' }}>
+            Shift+Enter yangi qator
+          </Typography>
 
           <Box sx={{ flex: 1 }} />
 
+          {/* Stop / Send */}
           {isStreaming ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CircularProgress size={16} thickness={5} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <CircularProgress size={14} thickness={5} sx={{ color: 'primary.main' }} />
               <Tooltip title="To'xtatish">
-                <IconButton onClick={stop} size="small" sx={{ color: 'error.main' }}>
-                  <StopCircleIcon />
+                <IconButton
+                  onClick={stop}
+                  size="small"
+                  sx={{
+                    color: 'error.main',
+                    border: 1,
+                    borderColor: 'error.light',
+                    borderRadius: 2,
+                    p: 0.5,
+                    '&:hover': { bgcolor: 'error.main', color: '#fff' },
+                  }}
+                >
+                  <StopCircleIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -107,21 +159,31 @@ export default function InputPanel({ sessionId }: Props) {
                   disabled={!input.trim()}
                   size="small"
                   sx={{
-                    bgcolor: input.trim() ? 'primary.main' : 'action.disabledBackground',
-                    color: input.trim() ? '#fff' : 'action.disabled',
-                    borderRadius: 2,
+                    borderRadius: 2.5,
                     p: 0.75,
-                    '&:hover': { bgcolor: 'primary.dark' },
-                    transition: 'all 0.15s',
+                    background: input.trim()
+                      ? 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)'
+                      : undefined,
+                    bgcolor: input.trim() ? undefined : 'action.disabledBackground',
+                    color: input.trim() ? '#fff' : 'action.disabled',
+                    boxShadow: input.trim() ? '0 4px 14px rgba(37,99,235,0.35)' : 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      background: input.trim()
+                        ? 'linear-gradient(135deg, #1D4ED8 0%, #6D28D9 100%)'
+                        : undefined,
+                      boxShadow: input.trim() ? '0 6px 20px rgba(37,99,235,0.45)' : 'none',
+                    },
+                    '&.Mui-disabled': { opacity: 0.5 },
                   }}
                 >
-                  <SendRoundedIcon sx={{ fontSize: 18 }} />
+                  <SendRoundedIcon sx={{ fontSize: 17 }} />
                 </IconButton>
               </span>
             </Tooltip>
           )}
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }

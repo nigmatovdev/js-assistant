@@ -1,18 +1,23 @@
-import Box           from '@mui/material/Box';
-import Typography    from '@mui/material/Typography';
-import Card          from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
-import CardContent   from '@mui/material/CardContent';
-import Avatar        from '@mui/material/Avatar';
-import Chip          from '@mui/material/Chip';
-import { motion }    from 'framer-motion';
-import GavelIcon           from '@mui/icons-material/Gavel';
-import AccountBalanceIcon  from '@mui/icons-material/AccountBalance';
-import BalanceIcon         from '@mui/icons-material/Balance';
-import PolicyIcon          from '@mui/icons-material/Policy';
-import ArrowForwardIcon    from '@mui/icons-material/ArrowForward';
+import { useMemo }       from 'react';
+import Box               from '@mui/material/Box';
+import Typography        from '@mui/material/Typography';
+import Card              from '@mui/material/Card';
+import CardActionArea    from '@mui/material/CardActionArea';
+import CardContent       from '@mui/material/CardContent';
+import Avatar            from '@mui/material/Avatar';
+import { motion }        from 'framer-motion';
+import GavelIcon              from '@mui/icons-material/Gavel';
+import AccountBalanceIcon     from '@mui/icons-material/AccountBalance';
+import BalanceIcon            from '@mui/icons-material/Balance';
+import PolicyIcon             from '@mui/icons-material/Policy';
+import SecurityIcon           from '@mui/icons-material/Security';
+import PersonOffIcon          from '@mui/icons-material/PersonOff';
+import LocalPoliceIcon        from '@mui/icons-material/LocalPolice';
+import DirectionsCarIcon      from '@mui/icons-material/DirectionsCar';
+import MoneyOffIcon           from '@mui/icons-material/MoneyOff';
+import ArrowForwardIcon       from '@mui/icons-material/ArrowForward';
 
-const suggestions = [
+const ALL_SUGGESTIONS = [
   {
     icon:     <AccountBalanceIcon />,
     color:    '#2563EB',
@@ -31,45 +36,96 @@ const suggestions = [
     label:    'Shaxsga qarshi',
     question: "Qasddan odam o'ldirish jinoyati uchun maksimal jazo qancha va qachon qo'llaniladi?",
   },
+  {
+    icon:     <SecurityIcon />,
+    color:    '#059669',
+    label:    'Davlat xavfsizligi',
+    question: "Davlat sirini oshkor qilish jinoyati uchun jinoyat kodeksida qanday jazolar nazarda tutilgan?",
+  },
+  {
+    icon:     <PersonOffIcon />,
+    color:    '#DC2626',
+    label:    'Tana jarohati',
+    question: "Qasddan og'ir tan jarohati yetkazish uchun jazo nima va og'irlashtiruvchi holatlar qanday?",
+  },
+  {
+    icon:     <LocalPoliceIcon />,
+    color:    '#D97706',
+    label:    'Huquq-tartibot',
+    question: "Huquq-tartibot organlariga qarshilik ko'rsatish yoki hujum qilish uchun qanday jazo belgilangan?",
+  },
+  {
+    icon:     <DirectionsCarIcon />,
+    color:    '#0284C7',
+    label:    'Transport jinoyatlari',
+    question: "Yo'l harakati qoidalarini buzib, odamning halok bo'lishiga sabab bo'lish uchun jazo nima?",
+  },
+  {
+    icon:     <MoneyOffIcon />,
+    color:    '#9333EA',
+    label:    'Firibgarlik',
+    question: "Katta miqdorda aldov yo'li bilan mulk o'zlashtirish (firibgarlik) uchun kodeksda qanday jazo ko'rsatilgan?",
+  },
+  {
+    icon:     <AccountBalanceIcon />,
+    color:    '#0F766E',
+    label:    'Pul yuvish',
+    question: "Jinoyat yo'li bilan olingan daromadlarni qonuniylashtirish (pul yuvish) uchun jazo nima?",
+  },
 ];
+
+function pickRandom<T>(arr: T[], n: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
 
 interface WelcomeScreenProps {
   onSuggest: (question: string) => void;
 }
 
 export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
+  // Pick 3 random suggestions once per mount
+  const suggestions = useMemo(() => pickRandom(ALL_SUGGESTIONS, 3), []);
+
   return (
     <Box
       sx={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', height: '100%',
-        px: { xs: 2, sm: 4 }, py: 4,
-        maxWidth: 760, mx: 'auto', width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100%',
+        px: { xs: 2, sm: 4 },
+        py: 5,
+        maxWidth: 740,
+        mx: 'auto',
+        width: '100%',
       }}
     >
       {/* Hero */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{ textAlign: 'center', marginBottom: 48 }}
+        transition={{ duration: 0.45 }}
+        style={{ textAlign: 'center', marginBottom: 44 }}
       >
         <Box
           sx={{
-            width: 80, height: 80, borderRadius: 4,
+            width: 76, height: 76, borderRadius: 4,
             background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             mx: 'auto', mb: 3,
-            boxShadow: '0 20px 60px rgba(37, 99, 235, 0.35)',
+            boxShadow: '0 16px 48px rgba(37,99,235,0.32)',
           }}
         >
-          <GavelIcon sx={{ fontSize: 42, color: '#fff' }} />
+          <GavelIcon sx={{ fontSize: 38, color: '#fff' }} />
         </Box>
 
         <Typography
-          variant="h3"
+          variant="h4"
           sx={{
-            fontWeight: 800, mb: 1.5,
+            fontWeight: 800,
+            mb: 1,
             background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -77,22 +133,21 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
         >
           JK AI
         </Typography>
-        <Typography variant="h6" color="text.secondary" fontWeight={400} sx={{ mb: 1 }}>
-          O'zbekiston Jinoyat Kodeksi bo'yicha AI yordamchi
+        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto', lineHeight: 1.7 }}>
+          O'zbekiston Jinoyat Kodeksi bo'yicha savollaringizni bering — tezkor va aniq javob oling
         </Typography>
-        <Chip
-          label="BAAI/bge-m3 · Qwen3 · RAG"
-          size="small"
-          variant="outlined"
-          sx={{ borderRadius: 2, fontSize: '0.7rem', color: 'text.disabled', borderColor: 'divider' }}
-        />
       </motion.div>
 
       {/* Suggestion cards */}
-      <Box sx={{ width: '100%', mb: 4 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ mb: 2, display: 'block', textAlign: 'center', letterSpacing: 2 }}>
+      <Box sx={{ width: '100%' }}>
+        <Typography
+          variant="overline"
+          color="text.disabled"
+          sx={{ display: 'block', textAlign: 'center', mb: 2, letterSpacing: 2, fontSize: '0.68rem' }}
+        >
           Namuna savollar
         </Typography>
+
         <Box
           sx={{
             display: 'grid',
@@ -103,44 +158,62 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           {suggestions.map((s, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 22 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15 + i * 0.1 }}
+              transition={{ duration: 0.38, delay: 0.12 + i * 0.09 }}
             >
               <Card
                 elevation={0}
                 sx={{
                   height: '100%',
-                  border: 1,
+                  border: 1.5,
                   borderColor: 'divider',
-                  borderRadius: 3,
-                  transition: 'all 0.2s ease',
+                  borderRadius: 4,
+                  transition: 'all 0.22s ease',
                   '&:hover': {
                     borderColor: s.color,
-                    boxShadow: `0 8px 32px ${s.color}22`,
-                    transform: 'translateY(-2px)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: `0 12px 40px ${s.color}20`,
                   },
                 }}
               >
                 <CardActionArea
                   onClick={() => onSuggest(s.question)}
-                  sx={{ height: '100%', p: 0.5 }}
+                  sx={{ height: '100%', borderRadius: 4 }}
                 >
-                  <CardContent sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Avatar sx={{ bgcolor: `${s.color}18`, width: 40, height: 40, color: s.color }}>
+                  <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: `${s.color}15`,
+                          color: s.color,
+                          width: 38, height: 38,
+                        }}
+                      >
                         {s.icon}
                       </Avatar>
-                      <Typography variant="caption" fontWeight={700} sx={{ color: s.color, letterSpacing: 0.5, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                      <Typography
+                        variant="caption"
+                        fontWeight={700}
+                        sx={{ color: s.color, textTransform: 'uppercase', letterSpacing: 0.6, fontSize: '0.64rem' }}
+                      >
                         {s.label}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, flex: 1 }}>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ lineHeight: 1.65, flex: 1, fontSize: '0.85rem' }}
+                    >
                       {s.question}
                     </Typography>
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: s.color }}>
-                      <Typography variant="caption" fontWeight={600}>So'rash</Typography>
-                      <ArrowForwardIcon sx={{ fontSize: 14 }} />
+                      <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem' }}>
+                        So'rash
+                      </Typography>
+                      <ArrowForwardIcon sx={{ fontSize: 13 }} />
                     </Box>
                   </CardContent>
                 </CardActionArea>
@@ -149,10 +222,6 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           ))}
         </Box>
       </Box>
-
-      <Typography variant="caption" color="text.disabled" sx={{ textAlign: 'center' }}>
-        Yuqoridagi + tugmasi yoki kartaga bosib yangi suhbat boshlang
-      </Typography>
     </Box>
   );
 }
