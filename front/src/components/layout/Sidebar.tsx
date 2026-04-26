@@ -106,7 +106,15 @@ export default function Sidebar({ open, onClose, onSearchOpen }: SidebarProps) {
       <Divider />
 
       {/* Session list */}
-      <List dense disablePadding sx={{ flex: 1, overflowY: 'auto', py: 0.5 }}>
+      <List dense disablePadding sx={{
+        flex: 1, overflowY: 'auto', py: 0.5,
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(128,128,128,0.2) transparent',
+        '&::-webkit-scrollbar': { width: '4px' },
+        '&::-webkit-scrollbar-track': { background: 'transparent' },
+        '&::-webkit-scrollbar-thumb': { borderRadius: '4px', bgcolor: 'rgba(128,128,128,0.2)' },
+        '&::-webkit-scrollbar-thumb:hover': { bgcolor: 'rgba(128,128,128,0.4)' },
+      }}>
         {sessions.length === 0 && (
           <Box sx={{ px: 3, py: 5, textAlign: 'center' }}>
             <ChatBubbleOutlineIcon sx={{ fontSize: 38, color: 'text.disabled', mb: 1, display: 'block', mx: 'auto' }} />

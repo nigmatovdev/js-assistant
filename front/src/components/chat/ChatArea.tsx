@@ -9,11 +9,25 @@ import { useChatStore }             from '../../store/chatStore';
 import { useSessionStore }          from '../../store/sessionStore';
 import { useSendMessage }           from '../../hooks/useSendMessage';
 
+const scrollbarSx = {
+  scrollbarWidth: 'thin' as const,
+  scrollbarColor: 'rgba(128,128,128,0.25) transparent',
+  '&::-webkit-scrollbar': { width: '5px' },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-thumb': {
+    borderRadius: '4px',
+    bgcolor: 'rgba(128,128,128,0.25)',
+  },
+  '&::-webkit-scrollbar-thumb:hover': {
+    bgcolor: 'rgba(128,128,128,0.45)',
+  },
+};
+
 export default function ChatArea() {
-  const { messages, streamingContent, streamingSources, isStreaming } = useChatStore();
-  const { activeId, createSession }                                   = useSessionStore();
-  const { send }                                                       = useSendMessage();
-  const bottomRef                                                      = useRef<HTMLDivElement>(null);
+  const { messages, streamingContent, streamingSources, isStreaming, currentSessionId } = useChatStore();
+  const { activeId, createSession }                                                      = useSessionStore();
+  const { send }                                                                         = useSendMessage();
+  const bottomRef                                                                        = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,7 +39,10 @@ export default function ChatArea() {
     send(sid, question);
   };
 
-  const streamingMsg = isStreaming || streamingContent
+  // Only show streaming UI for the session that owns the current stream.
+  // !!currentSessionId guards against null === null matching "new chat".
+  const isMyStream   = !!currentSessionId && currentSessionId === activeId;
+  const streamingMsg = isMyStream && (isStreaming || streamingContent)
     ? {
         id:         '__streaming__',
         session_id: activeId ?? '',
@@ -47,12 +64,11 @@ export default function ChatArea() {
           height: '100%',
           bgcolor: 'background.default',
           overflowY: 'auto',
+          ...scrollbarSx,
         }}
       >
-        {/* Equal spacer above — matches the spacer below the cards */}
         <Box sx={{ flex: 1, minHeight: 24 }} />
         <WelcomeScreen onSuggest={handleSuggest} />
-        {/* Equal spacer below cards — same flex weight as top spacer */}
         <Box sx={{ flex: 1, minHeight: 24 }} />
         <InputPanel sessionId={activeId} />
       </Box>
@@ -61,7 +77,7 @@ export default function ChatArea() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
-      <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, ...scrollbarSx }}>
         <Box sx={{ px: { xs: 2, sm: 4, md: 8 }, py: 3 }}>
           <Box sx={{ maxWidth: 720, mx: 'auto' }}>
             <AnimatePresence initial={false}>
@@ -76,7 +92,7 @@ export default function ChatArea() {
                 </motion.div>
               ))}
 
-              {isStreaming && !streamingContent && (
+              {isMyStream && isStreaming && !streamingContent && (
                 <motion.div
                   key="thinking"
                   initial={{ opacity: 0, y: 14 }}

@@ -108,9 +108,26 @@ export default function MessageBubble({ message, isStreaming = false }: Props) {
                 },
               }}
             >
-              <ReactMarkdown>
-                {message.content + (isStreaming ? ' ▊' : '')}
-              </ReactMarkdown>
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+              {isStreaming && (
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-block',
+                    width: '2px',
+                    height: '0.85em',
+                    bgcolor: 'primary.main',
+                    ml: '3px',
+                    borderRadius: '1px',
+                    verticalAlign: 'text-bottom',
+                    animation: 'jk-cursor 0.85s step-end infinite',
+                    '@keyframes jk-cursor': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%':      { opacity: 0 },
+                    },
+                  }}
+                />
+              )}
             </Box>
           )}
         </Paper>

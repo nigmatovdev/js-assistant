@@ -1,5 +1,6 @@
-import { create } from 'zustand';
+import { create }                from 'zustand';
 import type { Message, SourceChunk } from '../types';
+import { useSessionStore }      from './sessionStore';
 
 interface ChatState {
   messages: Message[];
@@ -14,18 +15,26 @@ interface ChatState {
   appendToken: (token: string) => void;
   setSources: (sources: SourceChunk[]) => void;
   finalizeStreaming: () => void;
+  cancelStreaming: () => void;
   setStreamingError: (msg: string) => void;
 }
 
-export const useChatStore = create<ChatState>((set) => ({
+export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   streamingContent: '',
   streamingSources: [],
   isStreaming: false,
   currentSessionId: null,
 
+  // When switching sessions, preserve the in-progress stream state so the
+  // background fetch can complete without being wiped.
   loadMessages: (messages) =>
-    set({ messages, streamingContent: '', streamingSources: [], isStreaming: false }),
+    set(s => ({
+      messages,
+      ...(s.isStreaming
+        ? {}
+        : { streamingContent: '', streamingSources: [], isStreaming: false, currentSessionId: null }),
+    })),
 
   clearMessages: () =>
     set({ messages: [], streamingContent: '', streamingSources: [], isStreaming: false, currentSessionId: null }),
@@ -44,38 +53,57 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setSources: (sources) => set({ streamingSources: sources }),
 
+  cancelStreaming: () =>
+    set({ streamingContent: '', streamingSources: [], isStreaming: false, currentSessionId: null }),
+
+  // Only append the assistant message when the user is still on the session that
+  // owns this stream. If they switched away, the backend has already saved the
+  // message — loadMessages will fetch it when they return.
   finalizeStreaming: () =>
-    set(s => ({
-      messages: [
-        ...s.messages,
-        {
-          id: crypto.randomUUID(),
-          session_id: s.currentSessionId ?? '',
-          role: 'assistant' as const,
-          content: s.streamingContent,
-          sources: s.streamingSources.length ? s.streamingSources : undefined,
-          created_at: new Date().toISOString(),
-        },
-      ],
-      streamingContent: '',
-      streamingSources: [],
-      isStreaming: false,
-    })),
+    set(s => {
+      const streamClear = { streamingContent: '', streamingSources: [], isStreaming: false };
+      const activeId    = useSessionStore.getState().activeId;
+
+      if (s.currentSessionId !== activeId) {
+        // User navigated away — clear stream state. Response is saved by backend.
+        return streamClear;
+      }
+
+      return {
+        ...streamClear,
+        messages: [
+          ...s.messages,
+          {
+            id:         crypto.randomUUID(),
+            session_id: s.currentSessionId ?? '',
+            role:       'assistant' as const,
+            content:    s.streamingContent,
+            sources:    s.streamingSources.length ? s.streamingSources : undefined,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      };
+    }),
 
   setStreamingError: (msg) =>
-    set(s => ({
-      messages: [
-        ...s.messages,
-        {
-          id: crypto.randomUUID(),
-          session_id: s.currentSessionId ?? '',
-          role: 'assistant' as const,
-          content: `Xatolik yuz berdi: ${msg}`,
-          created_at: new Date().toISOString(),
-        },
-      ],
-      streamingContent: '',
-      streamingSources: [],
-      isStreaming: false,
-    })),
+    set(s => {
+      const streamClear = { streamingContent: '', streamingSources: [], isStreaming: false };
+      const activeId    = useSessionStore.getState().activeId;
+
+      if (s.currentSessionId !== activeId) return streamClear;
+
+      return {
+        ...streamClear,
+        messages: [
+          ...s.messages,
+          {
+            id:         crypto.randomUUID(),
+            session_id: s.currentSessionId ?? '',
+            role:       'assistant' as const,
+            content:    `Xatolik yuz berdi: ${msg}`,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      };
+    }),
 }));

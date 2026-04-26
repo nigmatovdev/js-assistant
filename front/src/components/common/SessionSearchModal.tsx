@@ -105,7 +105,15 @@ export default function SessionSearchModal({ open, onClose }: Props) {
       {sessions.length > 0 && (
         <>
           <Divider />
-          <Box sx={{ maxHeight: 360, overflowY: 'auto' }}>
+          <Box sx={{
+            maxHeight: 360, overflowY: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(128,128,128,0.2) transparent',
+            '&::-webkit-scrollbar': { width: '4px' },
+            '&::-webkit-scrollbar-track': { background: 'transparent' },
+            '&::-webkit-scrollbar-thumb': { borderRadius: '4px', bgcolor: 'rgba(128,128,128,0.2)' },
+            '&::-webkit-scrollbar-thumb:hover': { bgcolor: 'rgba(128,128,128,0.4)' },
+          }}>
             {trimmed && displayed.length === 0 ? (
               <Box sx={{ px: 3, py: 3.5, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.disabled">Topilmadi</Typography>
