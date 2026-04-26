@@ -1,8 +1,19 @@
+const MONTHS = [
+  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr',
+];
+
 export function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffH = (now.getTime() - d.getTime()) / 3_600_000;
-  if (diffH < 24) return d.toLocaleTimeString('uz', { hour: '2-digit', minute: '2-digit' });
-  if (diffH < 48) return 'Kecha';
-  return d.toLocaleDateString('uz', { day: 'numeric', month: 'short' });
+  if (!iso) return '';
+  // Force UTC interpretation — backend stores UTC without 'Z' suffix
+  const normalized = iso.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + 'Z';
+  const utc = new Date(normalized);
+  // Convert UTC → Asia/Tashkent (UTC+5) via Intl
+  const local = new Date(utc.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+  const day   = local.getDate();
+  const month = MONTHS[local.getMonth()];
+  const year  = local.getFullYear();
+  const hh    = String(local.getHours()).padStart(2, '0');
+  const mm    = String(local.getMinutes()).padStart(2, '0');
+  return `${day} ${month} ${year}, ${hh}:${mm}`;
 }

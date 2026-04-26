@@ -6,7 +6,6 @@ import CardActionArea    from '@mui/material/CardActionArea';
 import CardContent       from '@mui/material/CardContent';
 import Avatar            from '@mui/material/Avatar';
 import { motion }        from 'framer-motion';
-import GavelIcon              from '@mui/icons-material/Gavel';
 import AccountBalanceIcon     from '@mui/icons-material/AccountBalance';
 import BalanceIcon            from '@mui/icons-material/Balance';
 import PolicyIcon             from '@mui/icons-material/Policy';
@@ -75,8 +74,7 @@ const ALL_SUGGESTIONS = [
 ];
 
 function pickRandom<T>(arr: T[], n: number): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
 interface WelcomeScreenProps {
@@ -84,7 +82,6 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
-  // Pick 3 random suggestions once per mount
   const suggestions = useMemo(() => pickRandom(ALL_SUGGESTIONS, 3), []);
 
   return (
@@ -93,48 +90,38 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100%',
         px: { xs: 2, sm: 4 },
-        py: 5,
         maxWidth: 740,
         mx: 'auto',
         width: '100%',
       }}
     >
-      {/* Hero */}
+      {/* Description hero */}
       <motion.div
-        initial={{ opacity: 0, y: -18 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        style={{ textAlign: 'center', marginBottom: 44 }}
+        transition={{ duration: 0.4 }}
+        style={{ textAlign: 'center', marginBottom: 36 }}
       >
-        <Box
-          sx={{
-            width: 76, height: 76, borderRadius: 4,
-            background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            mx: 'auto', mb: 3,
-            boxShadow: '0 16px 48px rgba(37,99,235,0.32)',
-          }}
-        >
-          <GavelIcon sx={{ fontSize: 38, color: '#fff' }} />
-        </Box>
-
         <Typography
-          variant="h4"
+          variant="h6"
           sx={{
-            fontWeight: 800,
-            mb: 1,
+            fontWeight: 700,
+            mb: 0.75,
             background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}
         >
-          JK AI
+          O'zbekiston Jinoyat Kodeksi bo'yicha
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto', lineHeight: 1.7 }}>
-          O'zbekiston Jinoyat Kodeksi bo'yicha savollaringizni bering — tezkor va aniq javob oling
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ maxWidth: 460, mx: 'auto', lineHeight: 1.75 }}
+        >
+          Sun'iy intellekt yordamchisi — jinoyat turlari, jazolar va huquqiy
+          normalar haqida tezkor hamda ishonchli javob oling
         </Typography>
       </motion.div>
 
@@ -158,9 +145,9 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
           {suggestions.map((s, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 22 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.38, delay: 0.12 + i * 0.09 }}
+              transition={{ duration: 0.35, delay: 0.1 + i * 0.08 }}
             >
               <Card
                 elevation={0}
@@ -183,13 +170,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
                 >
                   <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: `${s.color}15`,
-                          color: s.color,
-                          width: 38, height: 38,
-                        }}
-                      >
+                      <Avatar sx={{ bgcolor: `${s.color}15`, color: s.color, width: 38, height: 38 }}>
                         {s.icon}
                       </Avatar>
                       <Typography
@@ -210,9 +191,7 @@ export default function WelcomeScreen({ onSuggest }: WelcomeScreenProps) {
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: s.color }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem' }}>
-                        So'rash
-                      </Typography>
+                      <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem' }}>So'rash</Typography>
                       <ArrowForwardIcon sx={{ fontSize: 13 }} />
                     </Box>
                   </CardContent>

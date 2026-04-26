@@ -3,21 +3,22 @@ import type { Session } from '../types';
 import * as api from '../api/sessions';
 
 interface SessionState {
-  sessions: Session[];
-  activeId: string | null;
-  loading: boolean;
+  sessions:  Session[];
+  activeId:  string | null;
+  loading:   boolean;
 
-  fetchSessions: () => Promise<void>;
-  createSession: () => Promise<Session>;
-  deleteSession: (id: string) => Promise<void>;
-  setActive: (id: string) => void;
-  updateLocalTitle: (id: string, title: string) => void;
+  fetchSessions:   () => Promise<void>;
+  createSession:   () => Promise<Session>;
+  deleteSession:   (id: string) => Promise<void>;
+  setActive:       (id: string | null) => void;
+  clearActive:     () => void;
+  updateLocalTitle:(id: string, title: string) => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   sessions: [],
   activeId: null,
-  loading: false,
+  loading:  false,
 
   fetchSessions: async () => {
     set({ loading: true });
@@ -36,16 +37,26 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   deleteSession: async (id: string) => {
-    await api.deleteSession(id);
+    const prev = get().sessions;
+    // Optimistic remove
     set(s => {
       const sessions = s.sessions.filter(x => x.id !== id);
       const activeId = s.activeId === id ? (sessions[0]?.id ?? null) : s.activeId;
       return { sessions, activeId };
     });
+    try {
+      await api.deleteSession(id);
+    } catch {
+      set({ sessions: prev });
+    }
   },
 
-  setActive: (id: string) => {
+  setActive: (id: string | null) => {
     if (get().activeId !== id) set({ activeId: id });
+  },
+
+  clearActive: () => {
+    if (get().activeId !== null) set({ activeId: null });
   },
 
   updateLocalTitle: (id: string, title: string) =>

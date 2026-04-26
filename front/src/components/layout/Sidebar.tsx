@@ -14,18 +14,41 @@ import DeleteOutlineIcon     from '@mui/icons-material/DeleteOutline';
 import AddCommentIcon        from '@mui/icons-material/AddComment';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import GavelIcon             from '@mui/icons-material/Gavel';
+import SearchIcon            from '@mui/icons-material/Search';
 import { useSessionStore }   from '../../store/sessionStore';
+import { useChatStore }      from '../../store/chatStore';
 import { formatDate }        from '../../utils/formatDate';
 
 interface SidebarProps {
-  open: boolean;
-  onClose: () => void;
+  open:         boolean;
+  onClose:      () => void;
+  onSearchOpen: () => void;
 }
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
-  const { sessions, activeId, setActive, deleteSession, createSession } = useSessionStore();
+const btnSx = {
+  borderRadius: 2.5,
+  py: 0.85,
+  fontWeight: 600,
+  fontSize: '0.875rem',
+  justifyContent: 'flex-start',
+  px: 1.75,
+  textTransform: 'none' as const,
+};
 
-  const handleNew = async () => { await createSession(); onClose(); };
+export default function Sidebar({ open, onClose, onSearchOpen }: SidebarProps) {
+  const { sessions, activeId, setActive, deleteSession, clearActive } = useSessionStore();
+  const { clearMessages } = useChatStore();
+
+  const handleNew = () => {
+    clearActive();
+    clearMessages();
+    onClose();
+  };
+
+  const handleSearch = () => {
+    onSearchOpen();
+    onClose();
+  };
 
   return (
     <Drawer
@@ -51,17 +74,33 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </Box>
       </Box>
 
-      {/* New chat */}
-      <Box sx={{ px: 2, py: 1.5 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<AddCommentIcon />}
-          onClick={handleNew}
-          sx={{ borderRadius: 3, py: 0.9, fontWeight: 600 }}
-        >
-          Yangi suhbat
-        </Button>
+      {/* Actions — same style */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+        <Tooltip title="Ctrl+Shift+O" placement="right">
+          <Button
+            fullWidth
+            variant="outlined"
+            color="primary"
+            startIcon={<AddCommentIcon sx={{ fontSize: '18px !important' }} />}
+            onClick={handleNew}
+            sx={btnSx}
+          >
+            Yangi suhbat
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Ctrl+Shift+F" placement="right">
+          <Button
+            fullWidth
+            variant="outlined"
+            color="inherit"
+            startIcon={<SearchIcon sx={{ fontSize: '18px !important' }} />}
+            onClick={handleSearch}
+            sx={{ ...btnSx, borderColor: 'divider', color: 'text.secondary', '&:hover': { borderColor: 'text.primary', color: 'text.primary' } }}
+          >
+            Suhbat qidirish
+          </Button>
+        </Tooltip>
       </Box>
 
       <Divider />
@@ -81,11 +120,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             disablePadding
             sx={{
               px: 1, py: 0.25,
-              // Reveal delete button on row hover
               '&:hover .delete-btn': { opacity: 1 },
             }}
           >
-            {/* Session button takes most of the row */}
             <ListItemButton
               selected={s.id === activeId}
               onClick={() => { setActive(s.id); onClose(); }}
@@ -115,7 +152,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               />
             </ListItemButton>
 
-            {/* Delete — outside ListItemButton so clicks don't conflict */}
             <Tooltip title="O'chirish">
               <IconButton
                 className="delete-btn"

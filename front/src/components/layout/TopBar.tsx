@@ -55,21 +55,21 @@ export default function TopBar({ darkMode, onToggleTheme, onToggleSidebar }: Top
         >
           <Box
             sx={{
-              width: 34, height: 34, borderRadius: 2,
+              width: 44, height: 44, borderRadius: 3,
               background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(37,99,235,0.35)',
+              boxShadow: '0 4px 18px rgba(37,99,235,0.4)',
             }}
           >
-            <GavelIcon sx={{ fontSize: 18, color: '#fff' }} />
+            <GavelIcon sx={{ fontSize: 24, color: '#fff' }} />
           </Box>
           <Box>
             <Typography
-              variant="subtitle1"
+              variant="h6"
               sx={{
                 fontWeight: 800,
                 lineHeight: 1.1,
-                letterSpacing: -0.3,
+                letterSpacing: -0.5,
                 background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
