@@ -6,15 +6,17 @@ import { lightTheme, darkTheme }  from './theme/theme';
 import TopBar                     from './components/layout/TopBar';
 import Sidebar                    from './components/layout/Sidebar';
 import SessionSearchModal         from './components/common/SessionSearchModal';
+import SettingsModal              from './components/common/SettingsModal';
 import ChatArea                   from './components/chat/ChatArea';
 import { useSessionStore }        from './store/sessionStore';
 import { useChatStore }           from './store/chatStore';
 import { getSession }             from './api/sessions';
 
 export default function App() {
-  const [darkMode,    setDarkMode]    = useState(() => localStorage.getItem('jk-theme') === 'dark');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [darkMode,      setDarkMode]      = useState(() => localStorage.getItem('jk-theme') === 'dark');
+  const [sidebarOpen,   setSidebarOpen]   = useState(false);
+  const [searchOpen,    setSearchOpen]    = useState(false);
+  const [settingsOpen,  setSettingsOpen]  = useState(false);
 
   const { fetchSessions, activeId, setActive, clearActive } = useSessionStore();
   const { loadMessages, clearMessages }                      = useChatStore();
@@ -82,8 +84,10 @@ export default function App() {
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           onSearchOpen={() => setSearchOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
         <SessionSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
           <ChatArea />
         </Box>

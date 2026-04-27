@@ -1,14 +1,20 @@
+import json
 import os
 import chromadb
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(ROOT_DIR, ".env"))
 
 CHROMA_DIR      = os.getenv("CHROMA_DIR",   os.path.join(ROOT_DIR, "db", "chroma"))
 COLLECTION_NAME = "jk_chunks"
 EMBED_MODEL     = os.getenv("EMBED_MODEL",  "BAAI/bge-m3")
 LLM_MODEL       = os.getenv("LLM_MODEL",    "qwen3:8b")
 MIN_SCORE       = float(os.getenv("MIN_SCORE", "0.40"))
+
+OPENROUTER_BASE_URL   = "https://openrouter.ai/api/v1/chat/completions"
+DEFAULT_API_MODEL     = "inclusionai/ling-2.6-1t:free"
 
 _model      = None
 _collection = None
@@ -33,7 +39,6 @@ def _load():
         _collection = client.get_collection(COLLECTION_NAME)
 
 
-# Normalize Uzbek apostrophe variants to U+02BB (ʻ) used in the source text.
 _APOSTROPHE_NORM = str.maketrans("'''ʼ", "ʻʻʻʻ")
 
 def _normalize(text: str) -> str:
@@ -58,15 +63,7 @@ def retrieve(question: str, top_k: int = 5) -> list[dict]:
     return chunks
 
 
-def ask_stream(question: str, top_k: int = 5, history: list[dict] | None = None, model: str | None = None):
-    """Yields (kind, value) tuples: ('token', str) then ('sources', list).
-
-    history: prior turns as [{"role": "user"|"assistant", "content": str}, ...]
-    """
-    import ollama
-
-    chunks = retrieve(question, top_k)
-
+def _build_messages(question: str, chunks: list[dict], history: list[dict] | None) -> list[dict]:
     system = (
         "Siz O'zbekiston Jinoyat Kodeksi bo'yicha yuridik yordamchisiz.\n"
         "Faqat quyida berilgan maqolalar asosida javob bering.\n"
@@ -93,23 +90,98 @@ def ask_stream(question: str, top_k: int = 5, history: list[dict] | None = None,
     if history:
         messages.extend(history)
     messages.append({"role": "user", "content": user_msg})
+    return messages
 
-    # OLLAMA_HOST env var is automatically read by the ollama package
-    stream = ollama.chat(model=model or LLM_MODEL, messages=messages, stream=True)
 
+def _ask_stream_local(
+    question: str,
+    top_k: int = 5,
+    history: list[dict] | None = None,
+    model: str | None = None,
+):
+    import ollama
+    chunks   = retrieve(question, top_k)
+    messages = _build_messages(question, chunks, history)
+    stream   = ollama.chat(model=model or LLM_MODEL, messages=messages, stream=True)
     for chunk in stream:
         token = chunk["message"]["content"]
         if token:
             yield ("token", token)
+    yield ("sources", chunks)
+
+
+def _ask_stream_api(
+    question: str,
+    top_k: int = 5,
+    history: list[dict] | None = None,
+    model: str | None = None,
+):
+    import httpx
+    chunks    = retrieve(question, top_k)
+    messages  = _build_messages(question, chunks, history)
+    api_key   = os.getenv("OPENROUTER_API_KEY", "")
+    api_model = model or DEFAULT_API_MODEL
+
+    with httpx.Client(timeout=120.0) as client:
+        with client.stream(
+            "POST",
+            OPENROUTER_BASE_URL,
+            headers={
+                "Authorization":  f"Bearer {api_key}",
+                "Content-Type":   "application/json",
+                "HTTP-Referer":   "http://localhost:5173",
+                "X-Title":        "JK Assistant",
+            },
+            json={"model": api_model, "messages": messages, "stream": True},
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines():
+                if not line or not line.startswith("data: "):
+                    continue
+                data = line[6:]
+                if data == "[DONE]":
+                    break
+                try:
+                    obj   = json.loads(data)
+                    token = obj["choices"][0]["delta"].get("content", "")
+                    if token:
+                        yield ("token", token)
+                except (json.JSONDecodeError, KeyError, IndexError):
+                    pass
 
     yield ("sources", chunks)
 
 
-def ask(question: str, top_k: int = 5, history: list[dict] | None = None) -> dict:
+def ask_stream(
+    question: str,
+    top_k: int = 5,
+    history: list[dict] | None = None,
+    model: str | None = None,
+    provider: str = "local",
+):
+    """Yields (kind, value) tuples: ('token', str) then ('sources', list).
+
+    provider: 'local' uses Ollama; 'api' uses OpenRouter.
+    model:    overrides default model for the chosen provider.
+    history:  prior turns as [{"role": "user"|"assistant", "content": str}, ...]
+    """
+    if provider == "api":
+        yield from _ask_stream_api(question, top_k, history, model)
+    else:
+        yield from _ask_stream_local(question, top_k, history, model)
+
+
+def ask(
+    question: str,
+    top_k: int = 5,
+    history: list[dict] | None = None,
+    provider: str = "local",
+    model: str | None = None,
+) -> dict:
     """Non-streaming version. Returns {answer, sources}."""
     answer_parts = []
     sources = []
-    for kind, value in ask_stream(question, top_k, history):
+    for kind, value in ask_stream(question, top_k, history, model=model, provider=provider):
         if kind == "token":
             answer_parts.append(value)
         elif kind == "sources":

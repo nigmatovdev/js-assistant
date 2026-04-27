@@ -28,7 +28,7 @@ def ask_sync(
     chat_service.save_message(db, session_id, "user", req.question)
     history = chat_service.get_history(db, session_id)
 
-    result = rag_module.ask(req.question, req.top_k, history)
+    result = rag_module.ask(req.question, req.top_k, history, provider=req.provider, model=req.model)
 
     chat_service.save_message(
         db, session_id, "assistant", result["answer"], result["sources"]
@@ -58,7 +58,7 @@ async def ask_stream_endpoint(
 
         def run_rag():
             try:
-                for kind, value in rag_module.ask_stream(req.question, req.top_k, history, req.model):
+                for kind, value in rag_module.ask_stream(req.question, req.top_k, history, req.model, req.provider):
                     loop.call_soon_threadsafe(queue.put_nowait, (kind, value))
             except Exception as exc:
                 loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))

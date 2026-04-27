@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     min_score: float = 0.40
     ollama_host: str = "http://localhost:11434"
 
+    # OpenRouter API
+    openrouter_api_key: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+
     # Database (SQLite by default; set DATABASE_URL for PostgreSQL)
     database_url: str = f"sqlite:///{ROOT_DIR}/db/jk_assistant.db"
 

@@ -16,13 +16,14 @@ export async function streamAsk(
   model: string | null = null,
   callbacks: SSECallbacks,
   signal?: AbortSignal,
+  provider: string = 'local',
 ) {
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}/chat/${sessionId}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, top_k: topK, ...(model ? { model } : {}) }),
+      body: JSON.stringify({ question, top_k: topK, provider, ...(model ? { model } : {}) }),
       signal,
     });
   } catch (err) {

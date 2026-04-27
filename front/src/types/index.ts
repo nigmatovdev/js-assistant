@@ -9,6 +9,12 @@ export interface SourceChunk {
   score: number;
 }
 
+export interface MessageMeta {
+  provider:    'local' | 'api';
+  modelLabel:  string;
+  elapsed_ms:  number;
+}
+
 export interface Message {
   id: string;
   session_id: string;
@@ -16,6 +22,7 @@ export interface Message {
   content: string;
   sources?: SourceChunk[];
   created_at: string;
+  meta?: MessageMeta;
 }
 
 export interface Session {

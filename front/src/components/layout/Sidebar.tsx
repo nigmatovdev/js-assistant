@@ -10,23 +10,25 @@ import Divider               from '@mui/material/Divider';
 import Button                from '@mui/material/Button';
 import Avatar                from '@mui/material/Avatar';
 import Tooltip               from '@mui/material/Tooltip';
-import Select                from '@mui/material/Select';
-import MenuItem              from '@mui/material/MenuItem';
+import Chip                  from '@mui/material/Chip';
 import DeleteOutlineIcon     from '@mui/icons-material/DeleteOutline';
 import AddCommentIcon        from '@mui/icons-material/AddComment';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import GavelIcon             from '@mui/icons-material/Gavel';
 import SearchIcon            from '@mui/icons-material/Search';
-import PsychologyIcon        from '@mui/icons-material/Psychology';
+import SettingsIcon          from '@mui/icons-material/Settings';
+import WifiIcon              from '@mui/icons-material/Wifi';
+import WifiOffIcon           from '@mui/icons-material/WifiOff';
 import { useSessionStore }   from '../../store/sessionStore';
 import { useChatStore }      from '../../store/chatStore';
-import { useModelStore, AVAILABLE_MODELS } from '../../store/modelStore';
+import { useModelStore, LOCAL_MODELS, API_MODELS } from '../../store/modelStore';
 import { formatDate }        from '../../utils/formatDate';
 
 interface SidebarProps {
-  open:         boolean;
-  onClose:      () => void;
-  onSearchOpen: () => void;
+  open:           boolean;
+  onClose:        () => void;
+  onSearchOpen:   () => void;
+  onOpenSettings: () => void;
 }
 
 const btnSx = {
@@ -39,10 +41,13 @@ const btnSx = {
   textTransform: 'none' as const,
 };
 
-export default function Sidebar({ open, onClose, onSearchOpen }: SidebarProps) {
+export default function Sidebar({ open, onClose, onSearchOpen, onOpenSettings }: SidebarProps) {
   const { sessions, activeId, setActive, deleteSession, clearActive } = useSessionStore();
-  const { clearMessages }      = useChatStore();
-  const { modelId, setModel }  = useModelStore();
+  const { clearMessages }                        = useChatStore();
+  const { provider, localModelId, apiModelId }   = useModelStore();
+  const models     = provider === 'local' ? LOCAL_MODELS : API_MODELS;
+  const currentId  = provider === 'local' ? localModelId : apiModelId;
+  const modelLabel = models.find(m => m.id === currentId)?.label ?? currentId;
 
   const handleNew = () => {
     clearActive();
@@ -187,46 +192,42 @@ export default function Sidebar({ open, onClose, onSearchOpen }: SidebarProps) {
 
       <Divider />
 
-      {/* Model selector */}
-      <Box sx={{ px: 2, py: 1.25 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
-          <PsychologyIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-          <Typography variant="caption" color="text.disabled" fontWeight={600}
-            sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.67rem' }}>
-            LLM Model
-          </Typography>
-        </Box>
-        <Select
+      {/* Footer: model status + settings link */}
+      <Box sx={{ px: 2, py: 1.25, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Chip
           size="small"
-          value={AVAILABLE_MODELS.some(m => m.id === modelId) ? modelId : AVAILABLE_MODELS[0].id}
-          onChange={e => setModel(e.target.value)}
-          fullWidth
-          renderValue={(val) => AVAILABLE_MODELS.find(m => m.id === val)?.label ?? String(val)}
+          icon={provider === 'api'
+            ? <WifiIcon sx={{ fontSize: '13px !important' }} />
+            : <WifiOffIcon sx={{ fontSize: '13px !important' }} />
+          }
+          label={modelLabel}
+          onClick={() => { onOpenSettings(); onClose(); }}
           sx={{
-            fontSize: '0.82rem',
-            borderRadius: '10px',
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
-            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
+            flex: 1,
+            fontSize: '0.72rem',
+            height: 26,
+            cursor: 'pointer',
+            border: 1,
+            borderColor: provider === 'api' ? 'success.main' : 'divider',
+            color: provider === 'api' ? 'success.main' : 'text.secondary',
+            bgcolor: 'transparent',
+            '& .MuiChip-icon': { color: 'inherit' },
+            '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'action.hover' },
           }}
-        >
-          {AVAILABLE_MODELS.map(m => (
-            <MenuItem key={m.id} value={m.id}>
-              <Box>
-                <Typography variant="body2" sx={{ fontSize: '0.82rem', fontWeight: 500, lineHeight: 1.3 }}>
-                  {m.label}
-                </Typography>
-                <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
-                  {m.desc}
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
-        </Select>
+        />
+        <Tooltip title="Sozlamalar">
+          <IconButton
+            size="small"
+            onClick={() => { onOpenSettings(); onClose(); }}
+            sx={{ color: 'text.secondary', borderRadius: 2, '&:hover': { color: 'primary.main', bgcolor: 'action.hover' } }}
+          >
+            <SettingsIcon sx={{ fontSize: 17 }} />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Divider />
-      <Box sx={{ px: 2.5, py: 1 }}>
+      <Box sx={{ px: 2.5, py: 0.85 }}>
         <Typography variant="caption" color="text.disabled">
           Jami {sessions.length} ta suhbat
         </Typography>
