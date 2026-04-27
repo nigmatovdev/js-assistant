@@ -63,24 +63,18 @@ export default function TopBar({ darkMode, onToggleTheme, onToggleSidebar }: Top
           >
             <GavelIcon sx={{ fontSize: 24, color: '#fff' }} />
           </Box>
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 800,
-                lineHeight: 1.1,
-                letterSpacing: -0.5,
-                background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              JK AI
-            </Typography>
-            <Typography variant="caption" color="text.disabled" sx={{ lineHeight: 1, fontSize: '0.6rem', display: 'block' }}>
-              Jinoyat Kodeksi
-            </Typography>
-          </Box>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: -0.5,
+              background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            JK AI
+          </Typography>
         </Box>
 
         {/* RIGHT: theme toggle */}

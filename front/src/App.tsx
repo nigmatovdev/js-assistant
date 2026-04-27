@@ -34,14 +34,12 @@ export default function App() {
   }, [activeId]);
 
   // Load messages for the active session.
-  // Skip when we're actively streaming for this exact session — startStreaming already
-  // added the user message and the store is ahead of what the backend has saved yet.
+  // loadMessages(messages, sessionId) skips overwriting when a stream is active
+  // for that exact session — the store is already ahead of the backend.
   useEffect(() => {
     if (!activeId) { clearMessages(); return; }
-    const { isStreaming, currentSessionId } = useChatStore.getState();
-    if (isStreaming && currentSessionId === activeId) return;
     getSession(activeId)
-      .then(s => loadMessages(s.messages))
+      .then(s => loadMessages(s.messages, activeId))
       .catch(() => clearMessages());
   }, [activeId]); // eslint-disable-line react-hooks/exhaustive-deps
 

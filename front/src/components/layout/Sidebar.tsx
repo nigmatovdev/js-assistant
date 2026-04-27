@@ -10,13 +10,17 @@ import Divider               from '@mui/material/Divider';
 import Button                from '@mui/material/Button';
 import Avatar                from '@mui/material/Avatar';
 import Tooltip               from '@mui/material/Tooltip';
+import Select                from '@mui/material/Select';
+import MenuItem              from '@mui/material/MenuItem';
 import DeleteOutlineIcon     from '@mui/icons-material/DeleteOutline';
 import AddCommentIcon        from '@mui/icons-material/AddComment';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import GavelIcon             from '@mui/icons-material/Gavel';
 import SearchIcon            from '@mui/icons-material/Search';
+import PsychologyIcon        from '@mui/icons-material/Psychology';
 import { useSessionStore }   from '../../store/sessionStore';
 import { useChatStore }      from '../../store/chatStore';
+import { useModelStore, AVAILABLE_MODELS } from '../../store/modelStore';
 import { formatDate }        from '../../utils/formatDate';
 
 interface SidebarProps {
@@ -37,7 +41,8 @@ const btnSx = {
 
 export default function Sidebar({ open, onClose, onSearchOpen }: SidebarProps) {
   const { sessions, activeId, setActive, deleteSession, clearActive } = useSessionStore();
-  const { clearMessages } = useChatStore();
+  const { clearMessages }      = useChatStore();
+  const { modelId, setModel }  = useModelStore();
 
   const handleNew = () => {
     clearActive();
@@ -181,7 +186,47 @@ export default function Sidebar({ open, onClose, onSearchOpen }: SidebarProps) {
       </List>
 
       <Divider />
-      <Box sx={{ px: 2.5, py: 1.25 }}>
+
+      {/* Model selector */}
+      <Box sx={{ px: 2, py: 1.25 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
+          <PsychologyIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+          <Typography variant="caption" color="text.disabled" fontWeight={600}
+            sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.67rem' }}>
+            LLM Model
+          </Typography>
+        </Box>
+        <Select
+          size="small"
+          value={AVAILABLE_MODELS.some(m => m.id === modelId) ? modelId : AVAILABLE_MODELS[0].id}
+          onChange={e => setModel(e.target.value)}
+          fullWidth
+          renderValue={(val) => AVAILABLE_MODELS.find(m => m.id === val)?.label ?? String(val)}
+          sx={{
+            fontSize: '0.82rem',
+            borderRadius: '10px',
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
+          }}
+        >
+          {AVAILABLE_MODELS.map(m => (
+            <MenuItem key={m.id} value={m.id}>
+              <Box>
+                <Typography variant="body2" sx={{ fontSize: '0.82rem', fontWeight: 500, lineHeight: 1.3 }}>
+                  {m.label}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
+                  {m.desc}
+                </Typography>
+              </Box>
+            </MenuItem>
+          ))}
+        </Select>
+      </Box>
+
+      <Divider />
+      <Box sx={{ px: 2.5, py: 1 }}>
         <Typography variant="caption" color="text.disabled">
           Jami {sessions.length} ta suhbat
         </Typography>

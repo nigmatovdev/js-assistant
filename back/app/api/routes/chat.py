@@ -58,7 +58,7 @@ async def ask_stream_endpoint(
 
         def run_rag():
             try:
-                for kind, value in rag_module.ask_stream(req.question, req.top_k, history):
+                for kind, value in rag_module.ask_stream(req.question, req.top_k, history, req.model):
                     loop.call_soon_threadsafe(queue.put_nowait, (kind, value))
             except Exception as exc:
                 loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))

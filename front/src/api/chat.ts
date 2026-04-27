@@ -13,6 +13,7 @@ export async function streamAsk(
   sessionId: string,
   question: string,
   topK: number = 5,
+  model: string | null = null,
   callbacks: SSECallbacks,
   signal?: AbortSignal,
 ) {
@@ -21,7 +22,7 @@ export async function streamAsk(
     res = await fetch(`${BASE_URL}/chat/${sessionId}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, top_k: topK }),
+      body: JSON.stringify({ question, top_k: topK, ...(model ? { model } : {}) }),
       signal,
     });
   } catch (err) {

@@ -58,7 +58,7 @@ def retrieve(question: str, top_k: int = 5) -> list[dict]:
     return chunks
 
 
-def ask_stream(question: str, top_k: int = 5, history: list[dict] | None = None):
+def ask_stream(question: str, top_k: int = 5, history: list[dict] | None = None, model: str | None = None):
     """Yields (kind, value) tuples: ('token', str) then ('sources', list).
 
     history: prior turns as [{"role": "user"|"assistant", "content": str}, ...]
@@ -95,7 +95,7 @@ def ask_stream(question: str, top_k: int = 5, history: list[dict] | None = None)
     messages.append({"role": "user", "content": user_msg})
 
     # OLLAMA_HOST env var is automatically read by the ollama package
-    stream = ollama.chat(model=LLM_MODEL, messages=messages, stream=True)
+    stream = ollama.chat(model=model or LLM_MODEL, messages=messages, stream=True)
 
     for chunk in stream:
         token = chunk["message"]["content"]

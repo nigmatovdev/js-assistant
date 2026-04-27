@@ -1,12 +1,14 @@
-import { useRef } from 'react';
-import { streamAsk } from '../api/chat';
-import { useChatStore } from '../store/chatStore';
+import { useRef }          from 'react';
+import { streamAsk }       from '../api/chat';
+import { useChatStore }    from '../store/chatStore';
 import { useSessionStore } from '../store/sessionStore';
+import { useModelStore }   from '../store/modelStore';
 
 export function useSendMessage() {
   const abortRef = useRef<AbortController | null>(null);
   const { appendToken, setSources, finalizeStreaming, setStreamingError, startStreaming } = useChatStore();
   const { updateLocalTitle, sessions } = useSessionStore();
+  const { modelId }                    = useModelStore();
 
   const send = async (sessionId: string, question: string, topK = 5) => {
     if (!question.trim()) return;
@@ -23,7 +25,7 @@ export function useSendMessage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    await streamAsk(sessionId, question, topK, {
+    await streamAsk(sessionId, question, topK, modelId, {
       onToken: appendToken,
       onSources: setSources,
       onDone: () => {

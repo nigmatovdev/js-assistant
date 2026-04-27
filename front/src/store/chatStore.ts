@@ -9,7 +9,7 @@ interface ChatState {
   isStreaming: boolean;
   currentSessionId: string | null;
 
-  loadMessages: (messages: Message[]) => void;
+  loadMessages: (messages: Message[], sessionId?: string) => void;
   clearMessages: () => void;
   startStreaming: (userMsg: Message) => void;
   appendToken: (token: string) => void;
@@ -26,15 +26,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isStreaming: false,
   currentSessionId: null,
 
-  // When switching sessions, preserve the in-progress stream state so the
-  // background fetch can complete without being wiped.
-  loadMessages: (messages) =>
-    set(s => ({
-      messages,
-      ...(s.isStreaming
-        ? {}
-        : { streamingContent: '', streamingSources: [], isStreaming: false, currentSessionId: null }),
-    })),
+  // sessionId = which session these messages belong to.
+  // If a stream is active for that exact session, skip entirely — startStreaming
+  // already added the user message and the store is ahead of what the backend has.
+  // If streaming for a different session, update messages but keep streaming state.
+  loadMessages: (messages, sessionId) =>
+    set(s => {
+      if (s.isStreaming && s.currentSessionId === sessionId) return {};
+      return {
+        messages,
+        ...(s.isStreaming
+          ? {}
+          : { streamingContent: '', streamingSources: [], isStreaming: false, currentSessionId: null }),
+      };
+    }),
 
   clearMessages: () =>
     set({ messages: [], streamingContent: '', streamingSources: [], isStreaming: false, currentSessionId: null }),
