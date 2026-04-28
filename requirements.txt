@@ -7,6 +7,7 @@
 sentence-transformers
 chromadb
 ollama
+rank-bm25
 
 # ── API ───────────────────────────────────────────────────────────────────────
 fastapi>=0.111.0

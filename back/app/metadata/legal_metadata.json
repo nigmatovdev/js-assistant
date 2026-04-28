@@ -1,0 +1,39 @@
+{
+  "name": "O'zbekiston Respublikasi Jinoyat kodeksi",
+  "short_name": "Jinoyat kodeksi (JK)",
+  "year": 1994,
+  "article_count": 302,
+  "parts": [
+    {
+      "name": "Umumiy qism",
+      "chapters": 6,
+      "articles": "1–80",
+      "description": "Jinoyat qonunining umumiy qoidalari, jinoyat tushunchasi, javobgarlik asoslari va jazolash tamoyillari"
+    },
+    {
+      "name": "Maxsus qism",
+      "chapters": 10,
+      "articles": "81–302",
+      "description": "Alohida jinoyat turlari va ular uchun belgilangan jazolar"
+    }
+  ],
+  "sections": ["Umumiy qism", "Maxsus qism"],
+  "chapters": [
+    "Jinoyat qonuni",
+    "Jinoyat",
+    "Jazo",
+    "Jinoyatga sheriklik",
+    "Jinoiy mas'uliyatdan ozod qilish",
+    "Voyaga yetmagan shaxslarning jinoyat mas'uliyati",
+    "Shaxsga qarshi jinoyatlar",
+    "Iqtisodiy jinoyatlar",
+    "Davlat xavfsizligiga qarshi jinoyatlar",
+    "Huquq tartibiga qarshi jinoyatlar"
+  ],
+  "description": "Jinoyat kodeksi O'zbekiston Respublikasida jinoyat deb tan olinadigan qilmishlarni, ularning turlarini va qo'llaniladigan jazolarni belgilaydi. Kodeks jinoiy javobgarlik asoslarini, jazo turlarini va ularni qo'llash tartibini ham tartibga soladi.",
+  "publisher": "O'zbekiston Respublikasi Oliy Kengashi",
+  "last_updated": "2024",
+  "language": "O'zbek (lotin alifbosi)",
+  "jurisdiction": "O'zbekiston Respublikasi",
+  "citation": "O'zbekiston Respublikasining Jinoyat kodeksi, 22.09.1994-yil № 2012-XII"
+}
