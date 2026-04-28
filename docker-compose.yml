@@ -17,6 +17,7 @@ services:
       - LLM_MODEL=qwen3:8b
       - EMBED_MODEL=BAAI/bge-m3
       - MIN_SCORE=0.40
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"   # reach Ollama on the host (Linux)
     restart: unless-stopped
@@ -32,6 +33,16 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
+
+  frontend:
+    build:
+      context: front
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   hf_cache:
