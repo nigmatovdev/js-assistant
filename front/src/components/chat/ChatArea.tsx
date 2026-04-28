@@ -11,16 +11,17 @@ import { useSendMessage }           from '../../hooks/useSendMessage';
 
 const scrollbarSx = {
   scrollbarWidth: 'thin' as const,
-  scrollbarColor: 'rgba(128,128,128,0.25) transparent',
+  scrollbarColor: 'rgba(128,128,128,0.2) transparent',
   '&::-webkit-scrollbar': { width: '5px' },
   '&::-webkit-scrollbar-track': { background: 'transparent' },
-  '&::-webkit-scrollbar-thumb': {
-    borderRadius: '4px',
-    bgcolor: 'rgba(128,128,128,0.25)',
-  },
-  '&::-webkit-scrollbar-thumb:hover': {
-    bgcolor: 'rgba(128,128,128,0.45)',
-  },
+  '&::-webkit-scrollbar-thumb': { borderRadius: '4px', bgcolor: 'rgba(128,128,128,0.2)' },
+  '&::-webkit-scrollbar-thumb:hover': { bgcolor: 'rgba(128,128,128,0.38)' },
+};
+
+const msgVariants = {
+  initial:    { opacity: 0, y: 16 },
+  animate:    { opacity: 1, y: 0 },
+  transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] },
 };
 
 export default function ChatArea() {
@@ -39,8 +40,6 @@ export default function ChatArea() {
     send(sid, question);
   };
 
-  // Only show streaming UI for the session that owns the current stream.
-  // !!currentSessionId guards against null === null matching "new chat".
   const isMyStream   = !!currentSessionId && currentSessionId === activeId;
   const streamingMsg = isMyStream && (isStreaming || streamingContent)
     ? {
@@ -57,26 +56,17 @@ export default function ChatArea() {
 
   if (isWelcome) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          bgcolor: 'background.default',
-          overflowY: 'auto',
-          ...scrollbarSx,
-        }}
-      >
-        <Box sx={{ flex: 1, minHeight: 24 }} />
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', ...scrollbarSx }}>
+        <Box sx={{ flex: '0 1 100px' }} />
         <WelcomeScreen onSuggest={handleSuggest} />
-        <Box sx={{ flex: 1, minHeight: 24 }} />
+        <Box sx={{ flex: 1 }} />
         <InputPanel sessionId={activeId} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, ...scrollbarSx }}>
         <Box sx={{ px: { xs: 2, sm: 4, md: 8 }, py: 3 }}>
           <Box sx={{ maxWidth: 720, mx: 'auto' }}>
@@ -84,9 +74,9 @@ export default function ChatArea() {
               {messages.map(msg => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22 }}
+                  initial={msgVariants.initial}
+                  animate={msgVariants.animate}
+                  transition={msgVariants.transition}
                 >
                   <MessageBubble message={msg} />
                 </motion.div>
@@ -95,9 +85,9 @@ export default function ChatArea() {
               {isMyStream && isStreaming && !streamingContent && (
                 <motion.div
                   key="thinking"
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22 }}
+                  initial={msgVariants.initial}
+                  animate={msgVariants.animate}
+                  transition={msgVariants.transition}
                 >
                   <ThinkingBubble />
                 </motion.div>
@@ -106,9 +96,9 @@ export default function ChatArea() {
               {streamingMsg && streamingContent && (
                 <motion.div
                   key="streaming"
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22 }}
+                  initial={msgVariants.initial}
+                  animate={msgVariants.animate}
+                  transition={msgVariants.transition}
                 >
                   <MessageBubble message={streamingMsg} isStreaming />
                 </motion.div>

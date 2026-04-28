@@ -1,16 +1,17 @@
-import { useState, useRef }       from 'react';
-import type { KeyboardEvent }     from 'react';
-import Box                        from '@mui/material/Box';
-import TextField                  from '@mui/material/TextField';
-import IconButton                 from '@mui/material/IconButton';
-import Tooltip                    from '@mui/material/Tooltip';
-import CircularProgress           from '@mui/material/CircularProgress';
-import SendRoundedIcon            from '@mui/icons-material/SendRounded';
-import StopCircleIcon             from '@mui/icons-material/StopCircle';
-import AttachFileIcon             from '@mui/icons-material/AttachFile';
-import { useChatStore }           from '../../store/chatStore';
-import { useSessionStore }        from '../../store/sessionStore';
-import { useSendMessage }         from '../../hooks/useSendMessage';
+import { useState }               from 'react';
+import type { KeyboardEvent }      from 'react';
+import Box                         from '@mui/material/Box';
+import TextField                   from '@mui/material/TextField';
+import IconButton                  from '@mui/material/IconButton';
+import Tooltip                     from '@mui/material/Tooltip';
+import CircularProgress            from '@mui/material/CircularProgress';
+import { useTheme }                from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
+import SendRoundedIcon             from '@mui/icons-material/SendRounded';
+import StopCircleIcon              from '@mui/icons-material/StopCircle';
+import { useChatStore }            from '../../store/chatStore';
+import { useSessionStore }         from '../../store/sessionStore';
+import { useSendMessage }          from '../../hooks/useSendMessage';
 
 interface Props {
   sessionId: string | null;
@@ -18,10 +19,12 @@ interface Props {
 
 export default function InputPanel({ sessionId }: Props) {
   const [input, setInput]  = useState('');
-  const fileRef            = useRef<HTMLInputElement>(null);
   const { isStreaming }    = useChatStore();
   const { createSession }  = useSessionStore();
   const { send, stop }     = useSendMessage();
+  const theme              = useTheme();
+  const isDark             = theme.palette.mode === 'dark';
+  const hasInput           = input.trim().length > 0;
 
   const submit = async () => {
     const q = input.trim();
@@ -37,117 +40,123 @@ export default function InputPanel({ sessionId }: Props) {
   };
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 4, md: 8 }, pb: 2.5, pt: 1.5, bgcolor: 'background.default' }}>
-      <Box
-        sx={{
-          maxWidth: 720,
-          mx: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          border: 1.5,
-          borderColor: isStreaming ? 'primary.main' : 'divider',
-          borderRadius: 6,
-          px: 1.25,
-          py: 0.75,
-          bgcolor: 'background.paper',
-          transition: 'border-color 0.25s, box-shadow 0.25s',
-          boxShadow: isStreaming
-            ? '0 0 0 4px rgba(37,99,235,0.12), 0 4px 24px rgba(0,0,0,0.08)'
-            : '0 2px 20px rgba(0,0,0,0.07)',
-        }}
-      >
-        {/* Paperclip */}
-        <input ref={fileRef} type="file" hidden />
-        <Tooltip title="Fayl biriktirish (tez orada)">
-          <span>
-            <IconButton size="small" disabled sx={{ color: 'text.disabled', p: 0.5, flexShrink: 0 }}>
-              <AttachFileIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </span>
-        </Tooltip>
+    <Box sx={{ px: { xs: 2, sm: 4, md: 6 }, pb: 3, pt: 1.5 }}>
+      <Box sx={{ maxWidth: 720, mx: 'auto', position: 'relative' }}>
 
-        {/* Text input */}
-        <TextField
-          fullWidth
-          multiline
-          maxRows={6}
-          minRows={1}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder="Savol bering…"
-          variant="standard"
-          disabled={isStreaming}
-          InputProps={{ disableUnderline: true }}
-          sx={{
-            flex: 1,
-            '& .MuiInputBase-root': {
-              fontSize: '0.95rem',
-              lineHeight: 1.65,
-              color: 'text.primary',
-              py: 0.4,
-            },
-            '& .MuiInputBase-input::placeholder': {
-              color: 'text.disabled',
-              opacity: 1,
-            },
-          }}
-        />
-
-        {/* Stop / Send */}
-        {isStreaming ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-            <CircularProgress size={14} thickness={5} sx={{ color: 'primary.main' }} />
-            <Tooltip title="To'xtatish">
-              <IconButton
-                onClick={stop}
-                size="small"
-                sx={{
-                  color: 'error.main',
-                  border: 1,
-                  borderColor: 'error.light',
-                  borderRadius: 2,
-                  p: 0.5,
-                  '&:hover': { bgcolor: 'error.main', color: '#fff' },
-                }}
-              >
-                <StopCircleIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        ) : (
-          <Tooltip title="Yuborish (Enter)">
-            <span>
-              <IconButton
-                onClick={submit}
-                disabled={!input.trim()}
-                size="small"
-                sx={{
-                  flexShrink: 0,
-                  borderRadius: 2.5,
-                  p: 0.75,
-                  background: input.trim()
-                    ? 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)'
-                    : undefined,
-                  bgcolor: input.trim() ? undefined : 'action.disabledBackground',
-                  color: input.trim() ? '#fff' : 'action.disabled',
-                  boxShadow: input.trim() ? '0 4px 14px rgba(37,99,235,0.35)' : 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    background: input.trim()
-                      ? 'linear-gradient(135deg, #1D4ED8 0%, #6D28D9 100%)'
-                      : undefined,
-                    boxShadow: input.trim() ? '0 6px 20px rgba(37,99,235,0.45)' : 'none',
-                  },
-                  '&.Mui-disabled': { opacity: 0.5 },
-                }}
-              >
-                <SendRoundedIcon sx={{ fontSize: 17 }} />
-              </IconButton>
-            </span>
-          </Tooltip>
+        {/* Ambient glow behind container */}
+        {(isStreaming || hasInput) && (
+          <Box sx={{
+            position: 'absolute', inset: -6, borderRadius: '22px', pointerEvents: 'none',
+            background: isStreaming
+              ? 'radial-gradient(ellipse, rgba(91,140,255,0.14) 0%, transparent 70%)'
+              : 'radial-gradient(ellipse, rgba(91,140,255,0.09) 0%, transparent 70%)',
+            transition: 'opacity 0.3s',
+          }} />
         )}
+
+        {/* Glass container */}
+        <Box sx={{
+          display: 'flex', alignItems: 'flex-end', gap: 0.75,
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          bgcolor: isDark ? 'rgba(16,18,28,0.84)' : 'rgba(255,255,255,0.88)',
+          border: '1px solid',
+          borderColor: isStreaming
+            ? 'rgba(91,140,255,0.42)'
+            : isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
+          borderRadius: '18px',
+          px: 1.5, py: 0.9,
+          boxShadow: isDark
+            ? '0 8px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset'
+            : '0 8px 40px rgba(91,140,255,0.09), 0 1px 0 rgba(255,255,255,0.95) inset',
+          transition: 'border-color 0.25s, box-shadow 0.25s',
+        }}>
+
+          {/* Textarea */}
+          <TextField
+            fullWidth multiline maxRows={6} minRows={1}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Savol bering… (Shift+Enter = yangi qator)"
+            variant="standard"
+            disabled={isStreaming}
+            InputProps={{ disableUnderline: true }}
+            sx={{
+              flex: 1,
+              '& .MuiInputBase-root': { fontSize: '0.94rem', lineHeight: 1.66, color: 'text.primary', py: 0.4 },
+              '& .MuiInputBase-input::placeholder': { color: 'text.disabled', opacity: 1 },
+            }}
+          />
+
+          {/* Stop / Send button */}
+          <Box sx={{ flexShrink: 0, pb: 0.15 }}>
+            <AnimatePresence mode="wait">
+              {isStreaming ? (
+                <motion.div
+                  key="stop"
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.7, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <CircularProgress size={13} thickness={5} sx={{ color: 'primary.main' }} />
+                  <Tooltip title="To'xtatish">
+                    <IconButton
+                      onClick={stop} size="small"
+                      sx={{
+                        color: 'error.main', borderRadius: '10px', p: 0.6,
+                        border: '1px solid rgba(220,38,38,0.28)',
+                        bgcolor: 'rgba(220,38,38,0.07)',
+                        '&:hover': { bgcolor: 'error.main', color: '#fff', border: '1px solid transparent' },
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <StopCircleIcon sx={{ fontSize: 17 }} />
+                    </IconButton>
+                  </Tooltip>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="send"
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.7, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Tooltip title="Yuborish (Enter)">
+                    <span>
+                      <IconButton
+                        onClick={submit}
+                        disabled={!hasInput}
+                        size="small"
+                        sx={{
+                          borderRadius: '12px', p: 0.9,
+                          background: hasInput
+                            ? 'linear-gradient(135deg, #5B8CFF 0%, #7C4DFF 100%)'
+                            : undefined,
+                          bgcolor: hasInput ? undefined : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                          color: hasInput ? '#fff' : 'text.disabled',
+                          boxShadow: hasInput ? '0 4px 16px rgba(91,140,255,0.42)' : 'none',
+                          transition: 'all 0.22s cubic-bezier(0.22,1,0.36,1)',
+                          '&:hover': {
+                            background: hasInput ? 'linear-gradient(135deg, #4070E0 0%, #6B3AEA 100%)' : undefined,
+                            boxShadow: hasInput ? '0 6px 22px rgba(91,140,255,0.55)' : 'none',
+                            transform: hasInput ? 'scale(1.06)' : 'none',
+                          },
+                          '&.Mui-disabled': { opacity: 0.4 },
+                        }}
+                      >
+                        <SendRoundedIcon sx={{ fontSize: 17 }} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
