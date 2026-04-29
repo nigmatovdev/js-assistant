@@ -16,6 +16,40 @@ def list_sessions(db: Session) -> list[ChatSession]:
     return db.query(ChatSession).order_by(ChatSession.updated_at.desc()).all()
 
 
+def search_sessions(db: Session, q: str, limit: int = 30) -> list[dict]:
+    q_lower = q.strip().lower()
+    if not q_lower:
+        return []
+    sessions = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).all()
+    results = []
+    for s in sessions:
+        title_hit = q_lower in (s.title or '').lower()
+        msg_match = None
+        for m in s.messages:
+            if q_lower in m.content.lower():
+                idx   = m.content.lower().index(q_lower)
+                start = max(0, idx - 60)
+                end   = min(len(m.content), idx + len(q_lower) + 120)
+                snippet = (
+                    ('…' if start > 0 else '') +
+                    m.content[start:end] +
+                    ('…' if end < len(m.content) else '')
+                )
+                msg_match = {'role': m.role, 'snippet': snippet}
+                break
+        if title_hit or msg_match:
+            results.append({
+                'id':            s.id,
+                'title':         s.title,
+                'updated_at':    s.updated_at,
+                'message_count': len(s.messages),
+                'match':         msg_match,
+            })
+        if len(results) >= limit:
+            break
+    return results
+
+
 def get_session(db: Session, session_id: str) -> ChatSession | None:
     return db.query(ChatSession).filter(ChatSession.id == session_id).first()
 

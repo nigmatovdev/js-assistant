@@ -8,6 +8,7 @@ from back.app.schemas.chat import (
     MessageOut,
     SessionCreate,
     SessionOut,
+    SessionSearchOut,
     SessionUpdate,
     SessionWithMessages,
     SourceChunk,
@@ -35,6 +36,11 @@ def list_sessions(db: Session = Depends(get_db)):
 @router.post("", response_model=SessionOut, status_code=201)
 def create_session(data: SessionCreate, db: Session = Depends(get_db)):
     return _session_out(chat_service.create_session(db, data))
+
+
+@router.get("/search", response_model=list[SessionSearchOut])
+def search_sessions(q: str = "", db: Session = Depends(get_db)):
+    return chat_service.search_sessions(db, q)
 
 
 @router.get("/{session_id}", response_model=SessionWithMessages)

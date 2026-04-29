@@ -67,7 +67,7 @@ export default function MessageBubble({ message, isStreaming = false }: Props) {
       </Avatar>
 
       {/* Content column */}
-      <Box sx={{ maxWidth: '78%', minWidth: 80, '&:hover .msg-actions': { opacity: 1 } }}>
+      <Box sx={{ maxWidth: '78%', minWidth: 80, '&:hover .msg-copy-btn': { opacity: 1 } }}>
 
         {/* User bubble */}
         {isUser && (
@@ -87,6 +87,7 @@ export default function MessageBubble({ message, isStreaming = false }: Props) {
         {!isUser && (
           <Paper elevation={0} sx={{
             px: 2.25, py: 1.6,
+            position: 'relative',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             bgcolor: isDark ? 'rgba(20,22,36,0.78)' : 'rgba(255,255,255,0.78)',
@@ -97,6 +98,28 @@ export default function MessageBubble({ message, isStreaming = false }: Props) {
               ? '0 4px 24px rgba(0,0,0,0.38), 0 1px 0 rgba(255,255,255,0.05) inset'
               : '0 4px 24px rgba(91,140,255,0.07), 0 1px 0 rgba(255,255,255,0.9) inset',
           }}>
+            {/* Copy button — upper-right corner, shown on hover */}
+            {!isStreaming && (
+              <Tooltip title={copied ? 'Nusxalandi!' : 'Nusxalash'}>
+                <IconButton
+                  className="msg-copy-btn"
+                  size="small"
+                  onClick={handleCopy}
+                  sx={{
+                    position: 'absolute', top: 15, right: 15,
+                    p: 0.45, opacity: 0, transition: 'opacity 0.15s, background 0.15s',
+                    color: 'text.disabled', borderRadius: '7px',
+                    bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    '&:hover': { color: 'primary.main', bgcolor: isDark ? 'rgba(91,140,255,0.15)' : 'rgba(91,140,255,0.1)' },
+                  }}
+                >
+                  {copied
+                    ? <CheckIcon sx={{ fontSize: 12 }} />
+                    : <ContentCopyIcon sx={{ fontSize: 12 }} />
+                  }
+                </IconButton>
+              </Tooltip>
+            )}
             <Box sx={{
               fontSize: '0.9rem',
               '& p':        { margin: 0, lineHeight: 1.82 },
@@ -148,28 +171,6 @@ export default function MessageBubble({ message, isStreaming = false }: Props) {
               )}
             </Box>
           </Paper>
-        )}
-
-        {/* Copy button — shows on hover, assistant messages only */}
-        {!isUser && !isStreaming && (
-          <Box className="msg-actions" sx={{ display: 'flex', alignItems: 'center', mt: 0.5, opacity: 0, transition: 'opacity 0.15s' }}>
-            <Tooltip title={copied ? 'Nusxalandi!' : 'Nusxalash'}>
-              <IconButton
-                size="small"
-                onClick={handleCopy}
-                sx={{
-                  p: 0.5, color: 'text.disabled', borderRadius: '8px',
-                  '&:hover': { color: 'primary.main', bgcolor: isDark ? 'rgba(91,140,255,0.1)' : 'rgba(91,140,255,0.08)' },
-                  transition: 'all 0.15s',
-                }}
-              >
-                {copied
-                  ? <CheckIcon sx={{ fontSize: 13 }} />
-                  : <ContentCopyIcon sx={{ fontSize: 13 }} />
-                }
-              </IconButton>
-            </Tooltip>
-          </Box>
         )}
 
         {/* Sources */}

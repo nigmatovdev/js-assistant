@@ -36,3 +36,11 @@ export interface Session {
 export interface SessionWithMessages extends Session {
   messages: Message[];
 }
+
+export interface SessionSearchResult {
+  id:            string;
+  title:         string | null;
+  updated_at:    string;
+  message_count: number;
+  match:         { role: 'user' | 'assistant'; snippet: string } | null;
+}

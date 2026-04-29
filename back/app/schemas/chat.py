@@ -52,6 +52,21 @@ class SessionWithMessages(SessionOut):
     messages: list[MessageOut] = []
 
 
+class MessageMatch(BaseModel):
+    role:    str
+    snippet: str
+
+
+class SessionSearchOut(BaseModel):
+    id:            str
+    title:         Optional[str]
+    updated_at:    datetime
+    message_count: int
+    match:         Optional[MessageMatch] = None
+
+    model_config = {"from_attributes": True}
+
+
 class AskRequest(BaseModel):
     question: str           = Field(..., min_length=1, max_length=2000)
     top_k:    int           = Field(default=5, ge=1, le=20)
