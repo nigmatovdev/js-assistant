@@ -16,7 +16,7 @@ Fast, deterministic, works offline.
 import re
 from typing import Literal
 
-QueryType = Literal["general", "legal"]
+QueryType = Literal["general", "legal", "greeting"]
 
 # ── Uzbek suffix note ─────────────────────────────────────────────────────────
 # Uzbek nouns take case suffixes: -i, -da, -dan, -ga, -ni, -ning, -lar, -lari
@@ -108,7 +108,43 @@ _LEGAL_PATTERNS: list[re.Pattern] = [
     re.compile(r"\bnecha\s+(yil|oy|kun)\b",             re.I),
 ]
 
+# ── Greeting / chitchat patterns ──────────────────────────────────────────────
+# Matches conversational messages that are NOT legal questions.
+
+_GREETING_PATTERNS: list[re.Pattern] = [
+    # Greetings
+    re.compile(r"\b(salom|assalomu[\s-]?alaykum)\b",          re.I),
+    re.compile(r"^\s*(hey|hi|hello)\W*$",                      re.I),
+
+    # How are you
+    re.compile(r"\bqandaysan\b",                               re.I),
+    re.compile(r"\byaxshimisan\b",                             re.I),
+    re.compile(r"\bnima\s+gap\b",                              re.I),
+
+    # Who are you / what are you
+    re.compile(r"\bsen\s+kim(san)?\b",                         re.I),
+    re.compile(r"\bkimsan\b",                                  re.I),
+    re.compile(r"\bisming\s+nima\b",                           re.I),
+    re.compile(r"\bnima\s+qila\s+olasan\b",                    re.I),
+    re.compile(r"\bnima\s+bilasan\b",                          re.I),
+    re.compile(r"\bsen\s+nima(san)?\b",                        re.I),
+
+    # Short acknowledgements / farewells (whole-message anchored)
+    re.compile(r"^\s*rahmat\W*$",                              re.I),
+    re.compile(r"^\s*(xayr|ko['ʻ]rishguncha|sog['ʻ]lig[''ʻ]ingiz)\W*$", re.I),
+    re.compile(r"^\s*(ha|yo['ʻ]q|ok|okay|tushunarli|tushundim|mayli)\W*$", re.I),
+]
+
+
 # ── Scorer ─────────────────────────────────────────────────────────────────────
+
+def _score_greeting(text: str) -> int:
+    score = 0
+    for pat in _GREETING_PATTERNS:
+        if pat.search(text):
+            score += 5
+    return score
+
 
 def _score_general(text: str) -> int:
     score = 0
@@ -130,25 +166,26 @@ def _score_legal(text: str) -> int:
 
 def detect_query_type(question: str) -> QueryType:
     """
-    Detect whether a question is "general" (about the Criminal Code as a whole)
-    or "legal" (about specific articles, crimes, or penalties).
-
-    Returns
-    -------
-    "general" | "legal"
+    Detect whether a question is "general", "legal", or "greeting".
 
     Rules
     -----
     - Explicit article number (e.g. "168-modda") -> always "legal"
-    - Score both categories with weighted patterns
-    - Higher score wins; ties default to "legal" (retrieval handles edge cases)
+    - Score all three categories; highest score wins
+    - Greeting wins only when it outscores both legal and general
+    - Ties default to "legal" (retrieval handles edge cases)
     """
     # Fast-path: explicit article number -> always legal
     if re.search(r"\b\d+\s*-?\s*modda\b", question, re.I):
         return "legal"
 
-    general_score = _score_general(question)
-    legal_score   = _score_legal(question)
+    greeting_score = _score_greeting(question)
+    general_score  = _score_general(question)
+    legal_score    = _score_legal(question)
+
+    # Greeting only wins when it dominates and no legal/general signal present
+    if greeting_score > 0 and greeting_score >= general_score and greeting_score >= legal_score:
+        return "greeting"
 
     if general_score > legal_score:
         return "general"

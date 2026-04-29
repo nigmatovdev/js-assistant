@@ -31,6 +31,7 @@ from back.rag.intent     import detect_query_type
 from back.rag.normalizer import normalize
 from back.rag.prompts    import (
     GENERAL_PROMPT,
+    GREETING_PROMPT,
     LEGAL_PROMPT,
     build_general_context,
     build_legal_context,
@@ -78,6 +79,14 @@ def retrieve(question: str, top_k: int = 5) -> list[dict]:
 
 
 # ── Message builders ──────────────────────────────────────────────────────────
+
+def _build_greeting_messages(question: str, history: list[dict] | None) -> list[dict]:
+    messages: list[dict] = [{"role": "system", "content": GREETING_PROMPT}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": question})
+    return messages
+
 
 def _build_general_messages(question: str, history: list[dict] | None) -> list[dict]:
     metadata = _load_metadata()
@@ -234,7 +243,10 @@ def ask_stream(
     query_type = detect_query_type(question)
     chunks: list[dict] = []
 
-    if query_type == "general":
+    if query_type == "greeting":
+        messages = _build_greeting_messages(question, history)
+        # No retrieval, no sources
+    elif query_type == "general":
         messages = _build_general_messages(question, history)
         # No sources for general answers
     else:
