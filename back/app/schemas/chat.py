@@ -71,4 +71,4 @@ class AskRequest(BaseModel):
     question: str           = Field(..., min_length=1, max_length=2000)
     top_k:    int           = Field(default=5, ge=1, le=20)
     model:    Optional[str] = None      # overrides default model for the chosen provider
-    provider: str           = "local"   # "local" (Ollama) | "api" (OpenRouter)
+    provider: str           = "local"   # "local" (Ollama) | "api" (OpenRouter) | "openai" (GPT-4o)

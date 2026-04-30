@@ -14,7 +14,7 @@ from back.app.db.session import engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    # Pre-load embedding model + ChromaDB in a thread so the first request is instant
+    # Pre-load embedding model + FAISS index in a thread so the first request is instant
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, rag_module._load)
     yield

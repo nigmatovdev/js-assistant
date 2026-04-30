@@ -10,7 +10,7 @@ export interface SourceChunk {
 }
 
 export interface MessageMeta {
-  provider:    'local' | 'api';
+  provider:    'local' | 'api' | 'openai' | 'gemini';
   modelLabel:  string;
   elapsed_ms:  number;
 }

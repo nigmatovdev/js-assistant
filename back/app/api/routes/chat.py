@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import threading
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,6 +15,19 @@ from back.app.services import chat_service
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+def _background_summary(session_id: str, provider: str, model: str) -> None:
+    """Fire-and-forget: update long-term summary after a reply is saved."""
+    api_key  = os.getenv("OPENROUTER_API_KEY", "")
+    base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions")
+    chat_service.maybe_update_summary(
+        session_id = session_id,
+        provider   = provider,
+        model      = model,
+        api_key    = api_key,
+        base_url   = base_url,
+    )
+
+
 @router.post("/{session_id}/ask/sync")
 def ask_sync(
     session_id: str,
@@ -26,13 +40,26 @@ def ask_sync(
         raise HTTPException(status_code=404, detail="Session not found")
 
     chat_service.save_message(db, session_id, "user", req.question)
-    history = chat_service.get_history(db, session_id)
+    history        = chat_service.get_history(db, session_id)
+    memory_summary = chat_service.get_session_summary(db, session_id)
 
-    result = rag_module.ask(req.question, req.top_k, history, provider=req.provider, model=req.model)
-
-    chat_service.save_message(
-        db, session_id, "assistant", result["answer"], result["sources"]
+    result = rag_module.ask(
+        req.question,
+        req.top_k,
+        history,
+        provider       = req.provider,
+        model          = req.model,
+        memory_summary = memory_summary,
     )
+
+    chat_service.save_message(db, session_id, "assistant", result["answer"], result["sources"])
+
+    threading.Thread(
+        target  = _background_summary,
+        args    = (session_id, req.provider, req.model or "qwen3:8b"),
+        daemon  = True,
+    ).start()
+
     return result
 
 
@@ -48,7 +75,8 @@ async def ask_stream_endpoint(
         raise HTTPException(status_code=404, detail="Session not found")
 
     chat_service.save_message(db, session_id, "user", req.question)
-    history = chat_service.get_history(db, session_id)
+    history        = chat_service.get_history(db, session_id)
+    memory_summary = chat_service.get_session_summary(db, session_id)
 
     async def event_generator():
         loop   = asyncio.get_event_loop()
@@ -58,7 +86,14 @@ async def ask_stream_endpoint(
 
         def run_rag():
             try:
-                for kind, value in rag_module.ask_stream(req.question, req.top_k, history, req.model, req.provider):
+                for kind, value in rag_module.ask_stream(
+                    req.question,
+                    req.top_k,
+                    history,
+                    req.model,
+                    req.provider,
+                    memory_summary = memory_summary,
+                ):
                     loop.call_soon_threadsafe(queue.put_nowait, (kind, value))
             except Exception as exc:
                 loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))
@@ -84,10 +119,17 @@ async def ask_stream_endpoint(
 
         answer = "".join(tokens)
         chat_service.save_message(db, session_id, "assistant", answer, sources)
+
+        threading.Thread(
+            target = _background_summary,
+            args   = (session_id, req.provider, req.model or "qwen3:8b"),
+            daemon = True,
+        ).start()
+
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     return StreamingResponse(
         event_generator(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        media_type = "text/event-stream",
+        headers    = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

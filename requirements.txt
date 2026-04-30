@@ -5,9 +5,10 @@
 
 # ── RAG ───────────────────────────────────────────────────────────────────────
 sentence-transformers
-chromadb
+faiss-cpu          # swap for faiss-gpu if CUDA available
 ollama
 rank-bm25
+requests           # OpenRouter API calls
 
 # ── API ───────────────────────────────────────────────────────────────────────
 fastapi>=0.111.0
