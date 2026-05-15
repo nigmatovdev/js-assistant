@@ -1,13 +1,14 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Generator
+from typing import Generator, Optional
 
 from sqlalchemy.orm import Session
 
-from back.app.db.models import ChatSession, Message
+from back.app.db.models import ChatSession, Message, SessionMemory
 from back.app.schemas.chat import AskRequest, SessionCreate, SessionUpdate
 from back.rag import ask_stream as rag_ask_stream
+from back.rag.memory import SUMMARY_EVERY, summarize_conversation
 
 
 # ── Sessions ──────────────────────────────────────────────────────────────────
@@ -77,11 +78,11 @@ def delete_session(db: Session, session: ChatSession) -> None:
 
 # ── Messages ──────────────────────────────────────────────────────────────────
 
-def get_history(db: Session, session_id: str, limit: int = 10) -> list[dict]:
-    """Return the last `limit` messages before the most recent one.
+def get_history(db: Session, session_id: str, limit: int = 6) -> list[dict]:
+    """Return the last `limit` messages (short-term window) before the most recent one.
 
-    The most recent row is always the current user question (just saved),
-    so we skip it with offset(1) and return prior turns in chronological order.
+    The most recent row is the current user question (just saved), so we skip
+    it with offset(1). Default limit=6 → 3 user+assistant turns.
     """
     rows = (
         db.query(Message)
@@ -92,6 +93,82 @@ def get_history(db: Session, session_id: str, limit: int = 10) -> list[dict]:
         .all()
     )
     return [{"role": m.role, "content": m.content} for m in reversed(rows)]
+
+
+# ── Long-term memory ──────────────────────────────────────────────────────────
+
+def get_session_summary(db: Session, session_id: str) -> Optional[str]:
+    """Fetch the current long-term summary for a session (None if not yet created)."""
+    mem = db.query(SessionMemory).filter(SessionMemory.session_id == session_id).first()
+    return mem.summary if mem else None
+
+
+def maybe_update_summary(
+    session_id: str,
+    provider:   str = "local",
+    model:      str = "qwen3:8b",
+    api_key:    str = "",
+    base_url:   str = "https://openrouter.ai/api/v1/chat/completions",
+) -> None:
+    """
+    Check if summarization should be triggered; if so, run it and persist.
+    Intended to be called in a background thread — opens its own DB session.
+
+    Trigger condition: total message count has grown by >= SUMMARY_EVERY
+    since the last summarization.
+    """
+    from back.app.db.session import SessionLocal
+
+    db = SessionLocal()
+    try:
+        total = db.query(Message).filter(Message.session_id == session_id).count()
+
+        mem = db.query(SessionMemory).filter(SessionMemory.session_id == session_id).first()
+        last_count = mem.message_count if mem else 0
+
+        if total - last_count < SUMMARY_EVERY:
+            return   # not enough new messages yet
+
+        # Fetch recent messages to summarize (last 12 = 6 turns)
+        rows = (
+            db.query(Message)
+            .filter(Message.session_id == session_id)
+            .order_by(Message.created_at.desc())
+            .limit(12)
+            .all()
+        )
+        recent = [{"role": m.role, "content": m.content} for m in reversed(rows)]
+
+        new_summary = summarize_conversation(
+            recent_messages  = recent,
+            existing_summary = mem.summary if mem else None,
+            provider         = provider,
+            model            = model,
+            api_key          = api_key,
+            base_url         = base_url,
+        )
+        if not new_summary:
+            return
+
+        if mem:
+            mem.summary       = new_summary
+            mem.message_count = total
+            mem.updated_at    = datetime.utcnow()
+        else:
+            db.add(SessionMemory(
+                session_id    = session_id,
+                summary       = new_summary,
+                message_count = total,
+                updated_at    = datetime.utcnow(),
+            ))
+
+        db.commit()
+        print(f"[memory] session {session_id[:8]}… summary saved.", flush=True)
+
+    except Exception as e:
+        print(f"[memory] summary update error: {e}", flush=True)
+    finally:
+        db.close()
 
 
 def save_message(

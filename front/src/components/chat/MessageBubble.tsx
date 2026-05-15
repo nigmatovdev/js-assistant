@@ -14,9 +14,11 @@ import SmartToyIcon       from '@mui/icons-material/SmartToy';
 import ArticleIcon        from '@mui/icons-material/Article';
 import WifiIcon           from '@mui/icons-material/Wifi';
 import WifiOffIcon        from '@mui/icons-material/WifiOff';
+import AutoAwesomeIcon    from '@mui/icons-material/AutoAwesome';
 import TimerOutlinedIcon  from '@mui/icons-material/TimerOutlined';
 import ContentCopyIcon    from '@mui/icons-material/ContentCopy';
 import CheckIcon          from '@mui/icons-material/Check';
+import FlareIcon          from '@mui/icons-material/Flare';
 import ReactMarkdown      from 'react-markdown';
 import type { Message }   from '../../types';
 
@@ -233,15 +235,22 @@ export default function MessageBubble({ message, isStreaming = false }: Props) {
             </Box>
             <Typography variant="caption" sx={{ fontSize: '0.67rem', color: 'text.disabled' }}>·</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-              {message.meta.provider === 'api'
-                ? <WifiIcon    sx={{ fontSize: 11, color: 'success.main' }} />
-                : <WifiOffIcon sx={{ fontSize: 11, color: 'text.disabled' }} />
+              {message.meta.provider === 'openai' ? <AutoAwesomeIcon sx={{ fontSize: 11, color: 'primary.main' }} />
+               : message.meta.provider === 'gemini' ? <FlareIcon     sx={{ fontSize: 11, color: 'warning.main' }} />
+               : message.meta.provider === 'api'    ? <WifiIcon      sx={{ fontSize: 11, color: 'success.main' }} />
+               :                                      <WifiOffIcon   sx={{ fontSize: 11, color: 'text.disabled' }} />
               }
               <Typography variant="caption" sx={{
                 fontSize: '0.67rem',
-                color: message.meta.provider === 'api' ? 'success.main' : 'text.disabled',
+                color: message.meta.provider === 'openai' ? 'primary.main'
+                     : message.meta.provider === 'gemini' ? 'warning.main'
+                     : message.meta.provider === 'api'    ? 'success.main'
+                     :                                      'text.disabled',
               }}>
-                {message.meta.provider === 'api' ? 'Online' : 'Offline'}
+                {message.meta.provider === 'openai' ? 'GPT-4o'
+                 : message.meta.provider === 'gemini' ? 'Gemini'
+                 : message.meta.provider === 'api'    ? 'Online'
+                 :                                      'Offline'}
               </Typography>
             </Box>
             <Typography variant="caption" sx={{ fontSize: '0.67rem', color: 'text.disabled' }}>·</Typography>

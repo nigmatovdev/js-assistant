@@ -20,9 +20,11 @@ import SearchIcon            from '@mui/icons-material/Search';
 import SettingsIcon          from '@mui/icons-material/Settings';
 import WifiIcon              from '@mui/icons-material/Wifi';
 import WifiOffIcon           from '@mui/icons-material/WifiOff';
+import AutoAwesomeIcon       from '@mui/icons-material/AutoAwesome';
+import FlareIcon             from '@mui/icons-material/Flare';
 import { useSessionStore }   from '../../store/sessionStore';
 import { useChatStore }      from '../../store/chatStore';
-import { useModelStore, LOCAL_MODELS, API_MODELS } from '../../store/modelStore';
+import { useModelStore, LOCAL_MODELS, API_MODELS, OPENAI_MODELS, GEMINI_MODELS } from '../../store/modelStore';
 import { formatDate }        from '../../utils/formatDate';
 
 const SIDEBAR_WIDTH = 282;
@@ -40,9 +42,15 @@ function SidebarContent({ onClose, onSearchOpen, onOpenSettings }: Omit<SidebarP
 
   const { sessions, activeId, setActive, deleteSession, clearActive } = useSessionStore();
   const { clearMessages }                         = useChatStore();
-  const { provider, localModelId, apiModelId }    = useModelStore();
-  const models     = provider === 'local' ? LOCAL_MODELS : API_MODELS;
-  const currentId  = provider === 'local' ? localModelId : apiModelId;
+  const { provider, localModelId, apiModelId, openaiModelId, geminiModelId } = useModelStore();
+  const models     = provider === 'local'  ? LOCAL_MODELS
+                   : provider === 'openai' ? OPENAI_MODELS
+                   : provider === 'gemini' ? GEMINI_MODELS
+                   :                         API_MODELS;
+  const currentId  = provider === 'local'  ? localModelId
+                   : provider === 'openai' ? openaiModelId
+                   : provider === 'gemini' ? geminiModelId
+                   :                         apiModelId;
   const modelLabel = models.find(m => m.id === currentId)?.label ?? currentId;
 
   const handleNew    = () => { clearActive(); clearMessages(); onClose(); };
@@ -225,9 +233,10 @@ function SidebarContent({ onClose, onSearchOpen, onOpenSettings }: Omit<SidebarP
       <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', gap: 1 }}>
         <Chip
           size="small"
-          icon={provider === 'api'
-            ? <WifiIcon sx={{ fontSize: '12px !important' }} />
-            : <WifiOffIcon sx={{ fontSize: '12px !important' }} />
+          icon={provider === 'openai' ? <AutoAwesomeIcon sx={{ fontSize: '12px !important' }} />
+              : provider === 'gemini' ? <FlareIcon       sx={{ fontSize: '12px !important' }} />
+              : provider === 'api'    ? <WifiIcon        sx={{ fontSize: '12px !important' }} />
+              :                         <WifiOffIcon      sx={{ fontSize: '12px !important' }} />
           }
           label={modelLabel}
           onClick={() => { onOpenSettings(); onClose(); }}
@@ -235,8 +244,14 @@ function SidebarContent({ onClose, onSearchOpen, onOpenSettings }: Omit<SidebarP
             flex: 1, fontSize: '0.7rem', height: 26, cursor: 'pointer',
             bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
             border: '1px solid',
-            borderColor: provider === 'api' ? 'rgba(34,197,94,0.3)' : borderColor,
-            color: provider === 'api' ? 'success.main' : 'text.secondary',
+            borderColor: provider === 'openai' ? 'rgba(99,102,241,0.35)'
+                       : provider === 'gemini' ? 'rgba(237,108,2,0.35)'
+                       : provider === 'api'    ? 'rgba(34,197,94,0.3)'
+                       :                         borderColor,
+            color: provider === 'openai' ? 'primary.main'
+                 : provider === 'gemini' ? 'warning.main'
+                 : provider === 'api'    ? 'success.main'
+                 :                         'text.secondary',
             '& .MuiChip-icon': { color: 'inherit' },
             '&:hover': { bgcolor: 'rgba(91,140,255,0.1)', borderColor: 'primary.main', color: 'primary.main' },
             transition: 'all 0.2s',

@@ -3,7 +3,7 @@ import type { Message, MessageMeta, SourceChunk } from '../types';
 import { useSessionStore }      from './sessionStore';
 
 interface StreamingMeta {
-  provider:   'local' | 'api';
+  provider:   'local' | 'api' | 'openai' | 'gemini';
   modelLabel: string;
   startedAt:  number;
 }

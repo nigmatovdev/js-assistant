@@ -1,20 +1,22 @@
-import Dialog        from '@mui/material/Dialog';
-import Box            from '@mui/material/Box';
-import Typography     from '@mui/material/Typography';
-import IconButton     from '@mui/material/IconButton';
-import Divider        from '@mui/material/Divider';
-import ToggleButton   from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import MenuItem       from '@mui/material/MenuItem';
-import Select         from '@mui/material/Select';
-import CloseIcon      from '@mui/icons-material/Close';
-import SettingsIcon   from '@mui/icons-material/Settings';
-import WifiIcon       from '@mui/icons-material/Wifi';
-import WifiOffIcon    from '@mui/icons-material/WifiOff';
+import Dialog          from '@mui/material/Dialog';
+import Box              from '@mui/material/Box';
+import Typography       from '@mui/material/Typography';
+import IconButton       from '@mui/material/IconButton';
+import Divider          from '@mui/material/Divider';
+import MenuItem         from '@mui/material/MenuItem';
+import Select           from '@mui/material/Select';
+import CloseIcon        from '@mui/icons-material/Close';
+import SettingsIcon     from '@mui/icons-material/Settings';
+import WifiIcon         from '@mui/icons-material/Wifi';
+import WifiOffIcon      from '@mui/icons-material/WifiOff';
+import AutoAwesomeIcon  from '@mui/icons-material/AutoAwesome';
+import FlareIcon        from '@mui/icons-material/Flare';
 import {
   useModelStore,
   LOCAL_MODELS,
   API_MODELS,
+  OPENAI_MODELS,
+  GEMINI_MODELS,
   type Provider,
 } from '../../store/modelStore';
 
@@ -23,13 +25,48 @@ interface Props {
   onClose: () => void;
 }
 
-export default function SettingsModal({ open, onClose }: Props) {
-  const { provider, localModelId, apiModelId, setProvider, setLocalModel, setApiModel } =
-    useModelStore();
+const PROVIDER_OPTIONS: Array<{
+  value:  Provider;
+  Icon:   React.ComponentType<{ sx?: object }>;
+  label:  string;
+  color:  string;
+}> = [
+  { value: 'local',  Icon: WifiOffIcon,    label: 'Offline',    color: '#9e9e9e' },
+  { value: 'api',    Icon: WifiIcon,        label: 'OpenRouter', color: '#22c55e' },
+  { value: 'openai', Icon: AutoAwesomeIcon, label: 'GPT-4o',     color: '#5B8CFF' },
+  { value: 'gemini', Icon: FlareIcon,       label: 'Gemini',     color: '#ED6C02' },
+];
 
-  const models      = provider === 'local' ? LOCAL_MODELS : API_MODELS;
-  const currentId   = provider === 'local' ? localModelId : apiModelId;
-  const setModel    = provider === 'local' ? setLocalModel : setApiModel;
+export default function SettingsModal({ open, onClose }: Props) {
+  const {
+    provider, localModelId, apiModelId, openaiModelId, geminiModelId,
+    setProvider, setLocalModel, setApiModel, setOpenaiModel, setGeminiModel,
+  } = useModelStore();
+
+  const models =
+    provider === 'local'  ? LOCAL_MODELS  :
+    provider === 'openai' ? OPENAI_MODELS :
+    provider === 'gemini' ? GEMINI_MODELS :
+    API_MODELS;
+
+  const currentId =
+    provider === 'local'  ? localModelId  :
+    provider === 'openai' ? openaiModelId :
+    provider === 'gemini' ? geminiModelId :
+    apiModelId;
+
+  const setModel =
+    provider === 'local'  ? setLocalModel  :
+    provider === 'openai' ? setOpenaiModel :
+    provider === 'gemini' ? setGeminiModel :
+    setApiModel;
+
+  const activeOption = PROVIDER_OPTIONS.find(o => o.value === provider)!;
+  const statusLabel  =
+    provider === 'local'  ? `Ollama — ${models.find(m => m.id === currentId)?.label ?? currentId}`      :
+    provider === 'openai' ? `OpenAI — ${models.find(m => m.id === currentId)?.label ?? currentId}`      :
+    provider === 'gemini' ? `Gemini — ${models.find(m => m.id === currentId)?.label ?? currentId}`      :
+                            `OpenRouter — ${models.find(m => m.id === currentId)?.label ?? currentId}`;
 
   return (
     <Dialog
@@ -47,23 +84,13 @@ export default function SettingsModal({ open, onClose }: Props) {
       }}
     >
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          px: 2.5,
-          py: 1.75,
-          gap: 1,
-          bgcolor: 'background.paper',
-        }}
-      >
+      <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 1.75, gap: 1, bgcolor: 'background.paper' }}>
         <SettingsIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
         <Typography variant="subtitle1" fontWeight={700} sx={{ flex: 1 }}>
           Sozlamalar
         </Typography>
         <IconButton
-          size="small"
-          onClick={onClose}
+          size="small" onClick={onClose}
           sx={{ color: 'text.secondary', borderRadius: '8px', p: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
         >
           <CloseIcon sx={{ fontSize: 18 }} />
@@ -75,29 +102,40 @@ export default function SettingsModal({ open, onClose }: Props) {
       {/* Body */}
       <Box sx={{ px: 2.5, py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
 
-        {/* Provider toggle */}
+        {/* Provider grid — 2×2 */}
         <Box>
           <Typography variant="caption" color="text.disabled" fontWeight={600}
             sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.67rem', display: 'block', mb: 1 }}>
             Rejim
           </Typography>
-          <ToggleButtonGroup
-            value={provider}
-            exclusive
-            onChange={(_, val) => { if (val) setProvider(val as Provider); }}
-            size="small"
-            fullWidth
-            sx={{ '& .MuiToggleButton-root': { textTransform: 'none', fontSize: '0.82rem', py: 0.85, gap: 0.75, flex: 1 } }}
-          >
-            <ToggleButton value="local">
-              <WifiOffIcon sx={{ fontSize: 16 }} />
-              Offline — Local LLM
-            </ToggleButton>
-            <ToggleButton value="api">
-              <WifiIcon sx={{ fontSize: 16 }} />
-              Online — OpenRouter
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.75 }}>
+            {PROVIDER_OPTIONS.map(({ value, Icon, label, color }) => {
+              const isSelected = provider === value;
+              return (
+                <Box
+                  key={value}
+                  onClick={() => setProvider(value)}
+                  sx={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 0.75, py: 1, px: 1.25, borderRadius: '10px', cursor: 'pointer',
+                    border: '1.5px solid',
+                    borderColor: isSelected ? color : 'divider',
+                    bgcolor: isSelected ? `${color}18` : 'transparent',
+                    color: isSelected ? color : 'text.secondary',
+                    fontWeight: isSelected ? 600 : 400,
+                    transition: 'all 0.15s ease',
+                    userSelect: 'none',
+                    '&:hover': { borderColor: color, color: color, bgcolor: `${color}0c` },
+                  }}
+                >
+                  <Icon sx={{ fontSize: 15 }} />
+                  <Typography variant="body2" sx={{ fontSize: '0.78rem', fontWeight: 'inherit', color: 'inherit' }}>
+                    {label}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
         </Box>
 
         {/* Model selector */}
@@ -138,24 +176,14 @@ export default function SettingsModal({ open, onClose }: Props) {
         {/* Status indicator */}
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            px: 1.5,
-            py: 1,
-            borderRadius: 2,
-            bgcolor: provider === 'api' ? 'success.lighter' : 'action.hover',
+            display: 'flex', alignItems: 'center', gap: 1,
+            px: 1.5, py: 1, borderRadius: 2,
+            bgcolor: `${activeOption.color}0e`,
           }}
         >
-          {provider === 'api'
-            ? <WifiIcon sx={{ fontSize: 15, color: 'success.main' }} />
-            : <WifiOffIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
-          }
-          <Typography variant="caption" color={provider === 'api' ? 'success.main' : 'text.disabled'} sx={{ fontSize: '0.75rem' }}>
-            {provider === 'api'
-              ? `OpenRouter — ${models.find(m => m.id === currentId)?.label ?? currentId}`
-              : `Ollama — ${models.find(m => m.id === currentId)?.label ?? currentId}`
-            }
+          <activeOption.Icon sx={{ fontSize: 15, color: activeOption.color }} />
+          <Typography variant="caption" sx={{ fontSize: '0.75rem', color: activeOption.color }}>
+            {statusLabel}
           </Typography>
         </Box>
       </Box>
