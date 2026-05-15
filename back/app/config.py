@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     # OpenAI (GPT-4o)
-    openai_api_key: str = "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"
+    openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1/chat/completions"
 
     # Google Gemini

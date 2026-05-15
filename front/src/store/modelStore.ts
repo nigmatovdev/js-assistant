@@ -23,9 +23,11 @@ export const API_MODELS: ModelOption[] = [
 export const OPENAI_MODELS: ModelOption[] = [
   { id: 'gpt-4o',      label: 'GPT-4o',      desc: 'OpenAI — Aqlli va kuchli' },
   { id: 'gpt-4o-mini', label: 'GPT-4o Mini', desc: 'OpenAI — Tezkor va arzon' },
+  {id: 'gpt-5.5', label: 'GPT-5.5', desc: 'OpenAI — Yangi avlod' },
 ];
 
 export const GEMINI_MODELS: ModelOption[] = [
+  { id: 'gemini-3.1-pro-preview',       label: 'Gemini 3.1 Pro Preview',       desc: 'Google — Yangi avlod' },
   { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', desc: 'Google — Tez va kuchli' },
   { id: 'gemini-2.5-pro',   label: 'Gemini 2.5 Pro',   desc: 'Google — Eng kuchli' },
   { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', desc: 'Google — Tezkor' },

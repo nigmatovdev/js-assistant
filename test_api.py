@@ -1,12 +1,19 @@
-from google import genai
+# print(response.text)
 
-API_KEY = "AIzaSyB3xWugWbjKKmoWTMIyIsgMn7lLT9h_rtU"
+import vertexai
+from vertexai.generative_models import GenerativeModel
 
-client = genai.Client(api_key=API_KEY)
-
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents="O'zbek tili haqida ma'lumot bering",
+# Initialize Vertex AI (ADC is auto-detected, DO NOT pass credentials manually)
+vertexai.init(
+    project="project-ca265e68-9d90-4187-a94",
+    location="us-central1"
 )
 
+# Load Gemini model
+model = GenerativeModel("gemini-1.5-flash")
+
+# Send request
+response = model.generate_content("Say hello")
+
+# Print response
 print(response.text)

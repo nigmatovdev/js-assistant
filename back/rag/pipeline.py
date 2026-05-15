@@ -392,7 +392,8 @@ def _stream_gemini(messages: list[dict], model: str) -> Generator:
         system_instruction="\n\n".join(system_parts) if system_parts else None,
     )
 
-    print(f"[pipeline] Calling Gemini API (model: {model})...")
+    masked = api_key[:6] + "..." + api_key[-4:] if len(api_key) > 10 else "***"
+    print(f"[pipeline] Calling Gemini API (model: {model}, key: {masked})...")
     try:
         client = genai.Client(api_key=api_key.strip())
         for chunk in client.models.generate_content_stream(
